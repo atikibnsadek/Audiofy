@@ -1,0 +1,6 @@
+{
+  "name": "PDF to Audiobook Converter",
+  "description": "Convert PDF books into chapter-by-chapter audio files with selectable American or British male and female voices, built-in audio player, and download options.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

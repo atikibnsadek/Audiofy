@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer utilities {
+  @keyframes rainbowShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-rainbow-slow {
+    background-size: 200% 200%;
+    animation: rainbowShift 8s ease infinite;
+  }
+
+  .rainbow-glass {
+    background: linear-gradient(135deg, rgba(255, 240, 245, 0.75), rgba(240, 245, 255, 0.75), rgba(240, 255, 245, 0.75));
+    backdrop-filter: blur(12px);
+  }
+}
