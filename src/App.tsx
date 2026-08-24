@@ -80,9 +80,9 @@ export default function App() {
   }, [storedAudioFiles]);
 
   // Voice Settings
-  const [accent, setAccent] = useState<Accent>('american');
+  const [accent, setAccent] = useState<Accent>('british');
   const [gender, setGender] = useState<VoiceGender>('male');
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string>('am-male-morgan');
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>('br-male-jarvis');
 
   // Audio Playback State
   const [currentPlayingChapterId, setCurrentPlayingChapterId] = useState<string | null>(null);

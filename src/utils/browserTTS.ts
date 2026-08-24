@@ -35,36 +35,36 @@ export const VOICE_PROFILES: Record<string, VoiceProfileConfig> = {
     id: 'am-male-morgan',
     preferredKeywords: ['david', 'guy', 'christopher', 'alex', 'richard', 'mark', 'fred', 'neural2-d', 'en-us-d', 'en-us-b', 'google uk english male'],
     fallbackKeywords: ['male', 'us english male', 'uk english male'],
-    pitch: 0.66, // Deep, gravelly, and wise Morgan Freeman-style baritone
-    rateModifier: 0.88, // Measured, cinematic, storytelling cadence
+    pitch: 0.58, // Deep, gravelly, and wise Morgan Freeman-style baritone
+    rateModifier: 0.88, // Measured, cinematic, storytelling cadence with gravity (+5% speed)
   },
   'am-male-david': {
     id: 'am-male-david',
     preferredKeywords: ['david', 'guy', 'christopher', 'alex', 'richard', 'mark', 'fred', 'neural2-d', 'en-us-d', 'en-us-b', 'google uk english male'],
     fallbackKeywords: ['male', 'us english male', 'uk english male'],
-    pitch: 0.74, // Deep, resonant authoritative baritone
-    rateModifier: 0.94,
+    pitch: 0.72, // Deep, resonant authoritative baritone
+    rateModifier: 0.99, // (+5% speed)
   },
   'am-male-marcus': {
     id: 'am-male-marcus',
     preferredKeywords: ['mark', 'daniel', 'david', 'guy', 'standard-b', 'en-us-j', 'google uk english male'],
     fallbackKeywords: ['male', 'us english male', 'uk english male'],
-    pitch: 0.82, // Balanced, warm male storyteller
-    rateModifier: 0.96,
+    pitch: 0.85, // Balanced, warm, conversational male storyteller
+    rateModifier: 1.03, // (+5% speed)
   },
   'am-male-wyatt': {
     id: 'am-male-wyatt',
     preferredKeywords: ['guy', 'steffan', 'david', 'roger', 'mark', 'fred', 'alex', 'richard', 'en-us-d', 'google uk english male'],
     fallbackKeywords: ['male', 'us english male', 'uk english male'],
-    pitch: 0.78, // Grounded, folksy Texas drawl
-    rateModifier: 0.90, // Relaxed, easygoing Southern storytelling cadence
+    pitch: 0.76, // Grounded, folksy Texas drawl
+    rateModifier: 0.92, // Relaxed, easygoing Southern storytelling cadence (+5% speed)
   },
   'am-male-caleb': {
     id: 'am-male-caleb',
     preferredKeywords: ['eric', 'roger', 'fred', 'ryan', 'tom', 'junior', 'aaron', 'standard-d', 'google uk english male'],
     fallbackKeywords: ['male'],
-    pitch: 0.88, // Crisp, energetic tenor
-    rateModifier: 1.0,
+    pitch: 1.05, // Crisp, vibrant, energetic modern tenor
+    rateModifier: 1.16, // Upbeat, rapid-paced cadence (+5% speed)
   },
 
   // American Female Narrators
@@ -72,45 +72,52 @@ export const VOICE_PROFILES: Record<string, VoiceProfileConfig> = {
     id: 'am-female-claire',
     preferredKeywords: ['google us english', 'zira', 'jenny', 'serena', 'neural2-c', 'kore'],
     fallbackKeywords: ['female', 'us english female', 'us english'],
-    pitch: 1.04, // Warm classic storyteller
-    rateModifier: 0.98,
+    pitch: 0.96, // Warm classic gentle storyteller
+    rateModifier: 1.00, // (+5% speed)
   },
   'am-female-ava': {
     id: 'am-female-ava',
     preferredKeywords: ['aria', 'samantha', 'susan', 'veena', 'wavenet-c', 'google us english'],
     fallbackKeywords: ['female', 'us english'],
-    pitch: 0.94, // Deep, velvety, smooth melodic
-    rateModifier: 0.95,
+    pitch: 0.86, // Deep, velvety, smooth melodic poise
+    rateModifier: 0.95, // Intimate, hypnotic cadence (+5% speed)
   },
   'am-female-emma': {
     id: 'am-female-emma',
     preferredKeywords: ['michelle', 'victoria', 'karen', 'tessa', 'fiona', 'ana', 'standard-c', 'google us english'],
     fallbackKeywords: ['female', 'us english'],
-    pitch: 1.15, // Bright, articulate, youthful clarity
-    rateModifier: 1.02,
+    pitch: 1.22, // Bright, articulate, sparkling youthful clarity
+    rateModifier: 1.11, // Lively, engaging cadence (+5% speed)
   },
 
   // British Male Narrators (Strictly Male British/UK voices)
+  'br-male-jarvis': {
+    id: 'br-male-jarvis',
+    preferredKeywords: ['google uk english male', 'george', 'daniel', 'oliver', 'en-gb-d', 'en-gb-b', 'uk english male', 'english male'],
+    fallbackKeywords: ['uk english male', 'english male', 'male'],
+    pitch: 0.88, // Paul Bettany inspired: calm, cultured, suave, and articulate British AI assistant tone
+    rateModifier: 0.97, // Smooth, polite, articulate cadence with immaculate British RP diction (+5% speed)
+  },
   'br-male-mark': {
     id: 'br-male-mark',
     preferredKeywords: ['google uk english male', 'george', 'daniel', 'oliver', 'en-gb-b', 'en-gb-d', 'uk english male', 'english male'],
     fallbackKeywords: ['uk english male', 'english male', 'male'],
-    pitch: 0.84, // Warm, erudite BBC natural history cadence inspired by Mark Carwardine
-    rateModifier: 0.96, // Engaging, articulate documentary pacing
+    pitch: 0.82, // Warm, erudite BBC natural history cadence inspired by Mark Carwardine
+    rateModifier: 0.99, // Engaging, articulate documentary pacing with dramatic pauses (+5% speed)
   },
   'br-male-arthur': {
     id: 'br-male-arthur',
     preferredKeywords: ['google uk english male', 'george', 'daniel', 'uk english male', 'english (united kingdom) male', 'en-gb-b', 'oliver', 'fenrir'],
     fallbackKeywords: ['uk english male', 'english male', 'male'],
-    pitch: 0.78, // Refined classical British baritone
-    rateModifier: 0.92,
+    pitch: 0.68, // Stately Victorian Oxford gentleman baritone
+    rateModifier: 0.92, // Formal, measured, literary British cadence (+5% speed)
   },
   'br-male-oliver': {
     id: 'br-male-oliver',
     preferredKeywords: ['google uk english male', 'steffan', 'guy', 'christopher', 'alex', 'richard', 'en-gb-d', 'roger', 'eric', 'oliver'],
     fallbackKeywords: ['uk english male', 'english male', 'male'],
-    pitch: 0.85, // Clear, modern articulate British male
-    rateModifier: 0.96,
+    pitch: 0.95, // Clear, modern articulate British male tenor (original voice identity completely unchanged)
+    rateModifier: 1.20, // Brisk, natural conversational cadence with clear articulation (+5% speed)
   },
 
   // British Female Narrators
@@ -118,15 +125,15 @@ export const VOICE_PROFILES: Record<string, VoiceProfileConfig> = {
     id: 'br-female-eleanor',
     preferredKeywords: ['google uk english female', 'hazel', 'victoria', 'serena', 'sonia', 'en-gb-a', 'libby'],
     fallbackKeywords: ['uk english female', 'female'],
-    pitch: 1.02, // Warm literary British female
-    rateModifier: 0.96,
+    pitch: 0.94, // Aristocratic, sophisticated period-drama British female
+    rateModifier: 0.97, // Refined, cultured cadence (+5% speed)
   },
   'br-female-charlotte': {
     id: 'br-female-charlotte',
     preferredKeywords: ['google uk english female', 'stephanie', 'alice', 'catherine', 'en-gb-c'],
     fallbackKeywords: ['uk english female', 'female'],
-    pitch: 1.14, // Bright & expressive British female
-    rateModifier: 1.02,
+    pitch: 1.18, // Bright, theatrical, whimsical British storyteller
+    rateModifier: 1.09, // Vibrant storytelling tempo (+5% speed)
   },
 };
 

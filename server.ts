@@ -132,6 +132,167 @@ function sanitizeFileName(fileName: any): string {
   return fileName.replace(/[^a-zA-Z0-9._ -]/g, '').slice(0, 120);
 }
 
+export interface NarratorProfile {
+  id: string;
+  name: string;
+  accent: 'american' | 'british';
+  gender: 'male' | 'female';
+  geminiVoice: string;
+  systemInstruction: string;
+  sampleText: string;
+}
+
+export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
+  'am-male-morgan': {
+    id: 'am-male-morgan',
+    name: 'Morgan (Deep Cinematic Storyteller)',
+    accent: 'american',
+    gender: 'male',
+    geminiVoice: 'Charon',
+    systemInstruction: 'You are Morgan, a legendary American male audiobook narrator with a profound, deep, gravelly baritone voice inspired by Morgan Freeman. Read the text with calm philosophical gravitas, measured storytelling pacing, subtle dramatic pauses, and a deep resonant chest voice.',
+    sampleText: 'I must say, stories have a peculiar power to transport the soul. Settle in, and let us embark on this remarkable journey together.'
+  },
+  'am-male-david': {
+    id: 'am-male-david',
+    name: 'David (Deep Baritone)',
+    accent: 'american',
+    gender: 'male',
+    geminiVoice: 'Fenrir',
+    systemInstruction: 'You are David, an authoritative, commanding American male baritone narrator. Read the text with deep resonant authority, crisp steady cadence, and formidable presence suitable for history and epic literature.',
+    sampleText: 'Welcome. Settle in and prepare to explore the depths of this literary masterpiece.'
+  },
+  'am-male-marcus': {
+    id: 'am-male-marcus',
+    name: 'Marcus (Warm Storyteller)',
+    accent: 'american',
+    gender: 'male',
+    geminiVoice: 'Orpheus',
+    systemInstruction: 'You are Marcus, a warm, expressive, and conversational American male storyteller. Read the text with friendly natural warmth, melodic inflection, and engaging emotional connection.',
+    sampleText: 'Welcome to this audiobook edition. Let us begin our journey together through chapter one.'
+  },
+  'am-male-wyatt': {
+    id: 'am-male-wyatt',
+    name: 'Wyatt (Texas Drawl)',
+    accent: 'american',
+    gender: 'male',
+    geminiVoice: 'Puck',
+    systemInstruction: 'You are Wyatt, an authentic American country storyteller with a genuine Southern Texas drawl. Read the text with relaxed folksy charm, easygoing Southern rhythm, down-home warmth, and rustic character.',
+    sampleText: 'Howdy and welcome to this audio edition. Settle on in, and let us get right into chapter one.'
+  },
+  'am-male-caleb': {
+    id: 'am-male-caleb',
+    name: 'Caleb (Vibrant & Energetic)',
+    accent: 'american',
+    gender: 'male',
+    geminiVoice: 'Pegasus',
+    systemInstruction: 'You are Caleb, a youthful, crisp, and energetic American male tenor narrator. Read the text with brisk upbeat tempo, vibrant modern enthusiasm, and sharp articulation ideal for thrillers and fast adventure.',
+    sampleText: 'Hey there! Fasten your seatbelt as we dive straight into chapter one of this thrilling adventure.'
+  },
+  'am-female-claire': {
+    id: 'am-female-claire',
+    name: 'Claire (Warm Storyteller)',
+    accent: 'american',
+    gender: 'female',
+    geminiVoice: 'Kore',
+    systemInstruction: 'You are Claire, a gentle, soothing, and comforting American female narrator. Read the text with warm empathetic storytelling cadence, graceful pacing, and tender literary poise.',
+    sampleText: 'Welcome to this audio edition. Let us begin our journey together through chapter one.'
+  },
+  'am-female-ava': {
+    id: 'am-female-ava',
+    name: 'Ava (Smooth & Melodic)',
+    accent: 'american',
+    gender: 'female',
+    geminiVoice: 'Aoede',
+    systemInstruction: 'You are Ava, a silky, smooth, and intimate American female narrator. Read the text with velvety melodic flow, gentle hypnotic cadence, and rich poetic atmosphere.',
+    sampleText: 'Welcome to the audio edition. We invite you to sit back, relax, and enjoy the reading.'
+  },
+  'am-female-emma': {
+    id: 'am-female-emma',
+    name: 'Emma (Bright & Expressive)',
+    accent: 'american',
+    gender: 'female',
+    geminiVoice: 'Leda',
+    systemInstruction: 'You are Emma, a bright, cheerful, and articulate American female narrator. Read the text with sparkling clarity, lively upbeat cadence, and expressive youthful clarity.',
+    sampleText: 'Welcome to this audiobook. Let these words unfold vividly as we begin our story.'
+  },
+  'br-male-jarvis': {
+    id: 'br-male-jarvis',
+    name: 'JARVIS AI',
+    accent: 'british',
+    gender: 'male',
+    geminiVoice: 'Charon',
+    systemInstruction: 'You are JARVIS AI, the iconic British AI assistant inspired by the voice of British actor Paul Bettany. Speak in an impeccably polished British Received Pronunciation (RP) accent with soft-spoken composure, razor-sharp intelligence, effortless suave charm, polite dry wit, and crystal-clear articulation. Maintain an unflappable, courteous, and sophisticated presence throughout the narration.',
+    sampleText: 'Good day. Systems are fully calibrated and operational. At your service, shall we proceed with the narration?'
+  },
+  'br-male-mark': {
+    id: 'br-male-mark',
+    name: 'Mark (BBC Wildlife Narrator)',
+    accent: 'british',
+    gender: 'male',
+    geminiVoice: 'Fenrir',
+    systemInstruction: 'You are Mark, an acclaimed British BBC nature and wildlife documentary narrator inspired by Mark Carwardine. Read the text in a distinguished British Received Pronunciation (RP) accent with infectious natural wonder, articulate erudition, dramatic documentary pauses, and vivid storytelling enthusiasm.',
+    sampleText: 'It is truly one of nature’s most magnificent spectacles. Join me as we uncover the extraordinary story waiting just ahead.'
+  },
+  'br-male-arthur': {
+    id: 'br-male-arthur',
+    name: 'Arthur (Classical Baritone)',
+    accent: 'british',
+    gender: 'male',
+    geminiVoice: 'Orpheus',
+    systemInstruction: 'You are Arthur, a classical British Oxford gentleman baritone narrator. Read the text with stately Victorian elegance, dry dignified wit, formal British RP cadence, and rich theatrical depth.',
+    sampleText: 'Good day and welcome to this audio edition. We shall now commence our journey.'
+  },
+  'br-male-oliver': {
+    id: 'br-male-oliver',
+    name: 'Oliver (Modern & Articulate)',
+    accent: 'british',
+    gender: 'male',
+    geminiVoice: 'Puck',
+    systemInstruction: 'You are Oliver, a modern, articulate, and confident contemporary British male narrator. Read the text at a brisk, engaging, and moderately swift pace (approximately 10–15% faster than standard), while keeping every word crystal clear, polished, and articulate. Maintain natural phrasing and pauses at punctuation, commas, periods, and paragraph breaks without compressing pauses or rushing individual syllables. Deliver with modern British intonation, refined diction, and lively storytelling confidence.',
+    sampleText: 'Welcome to this audiobook. Let us delve into the remarkable narrative that lies ahead.'
+  },
+  'br-female-eleanor': {
+    id: 'br-female-eleanor',
+    name: 'Eleanor (Warm Literary)',
+    accent: 'british',
+    gender: 'female',
+    geminiVoice: 'Zephyr',
+    systemInstruction: 'You are Eleanor, an aristocratic, sophisticated British female narrator with a refined Queen\'s English accent. Read the text with cultured literary grace, poised eloquence, and velvety period-drama depth.',
+    sampleText: 'Good day and welcome to this audio edition. We shall now commence chapter one.'
+  },
+  'br-female-charlotte': {
+    id: 'br-female-charlotte',
+    name: 'Charlotte (Bright & Expressive)',
+    accent: 'british',
+    gender: 'female',
+    geminiVoice: 'Aoede',
+    systemInstruction: 'You are Charlotte, a charming, theatrical, and vibrant British female storyteller. Read the text with expressive British inflection, bright whimsical color, and delightful fairytale storytelling flair.',
+    sampleText: 'Welcome to this audio edition. I am delighted to guide you through each chapter.'
+  },
+};
+
+const sampleAudioCache = new Map<string, { audioUrl: string; audioBase64: string; duration: number; voiceId: string; voiceName: string }>();
+
+function resolveNarratorProfile(voiceId?: string, accent?: string, gender?: string): NarratorProfile {
+  if (voiceId && NARRATOR_PROFILES[voiceId]) {
+    return NARRATOR_PROFILES[voiceId];
+  }
+  if (voiceId) {
+    const vIdLower = voiceId.toLowerCase();
+    for (const key of Object.keys(NARRATOR_PROFILES)) {
+      if (vIdLower.includes(key) || key.includes(vIdLower)) {
+        return NARRATOR_PROFILES[key];
+      }
+    }
+  }
+  const isBrit = accent === 'british';
+  const isFemale = gender === 'female';
+  if (isBrit) {
+    return isFemale ? NARRATOR_PROFILES['br-female-eleanor'] : NARRATOR_PROFILES['br-male-mark'];
+  }
+  return isFemale ? NARRATOR_PROFILES['am-female-claire'] : NARRATOR_PROFILES['am-male-morgan'];
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -150,6 +311,56 @@ async function startServer() {
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Test / preview sample audio for a specific narrator persona
+  app.post('/api/test-voice-sample', async (req, res) => {
+    try {
+      const voiceId = sanitizeInputString(req.body?.voiceId, 50);
+      const profile = resolveNarratorProfile(voiceId);
+
+      if (sampleAudioCache.has(profile.id)) {
+        return res.json(sampleAudioCache.get(profile.id));
+      }
+
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-tts-preview',
+        contents: [{ parts: [{ text: profile.sampleText }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: profile.geminiVoice },
+            },
+          },
+        },
+      });
+
+      const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (data) {
+        const pcmBuffer = Buffer.from(data, 'base64');
+        const sampleRate = 24000;
+        const wavHeader = createWavHeader(pcmBuffer.length, sampleRate, 1, 16);
+        const fullWavBuffer = Buffer.concat([wavHeader, pcmBuffer]);
+        const durationSeconds = pcmBuffer.length / (sampleRate * 2);
+        const base64Wav = fullWavBuffer.toString('base64');
+
+        const result = {
+          audioUrl: `data:audio/wav;base64,${base64Wav}`,
+          audioBase64: base64Wav,
+          duration: durationSeconds,
+          voiceId: profile.id,
+          voiceName: profile.name,
+        };
+
+        sampleAudioCache.set(profile.id, result);
+        return res.json(result);
+      }
+    } catch (err: any) {
+      console.warn('Sample preview generation failed via Gemini:', err?.message || err);
+    }
+    return res.status(500).json({ error: 'Failed to generate voice preview' });
   });
 
   // Extract chapters from PDF or raw extracted text
@@ -292,7 +503,6 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
       const text = sanitizeInputString(rawText, 500000);
       const accent = req.body?.accent === 'british' ? 'british' : 'american';
       const gender = req.body?.gender === 'female' ? 'female' : 'male';
-      const voiceName = sanitizeInputString(req.body?.voiceName, 50);
       const voiceId = sanitizeInputString(req.body?.voiceId, 50);
 
       if (!text || text.trim().length === 0) {
@@ -300,31 +510,8 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
       }
 
       const ai = getGeminiClient();
-
-      // Resolve best Gemini prebuilt voice based on narrator ID, gender, and accent
-      let selectedVoice = voiceName;
-      if (voiceId) {
-        const idLower = voiceId.toLowerCase();
-        if (idLower.includes('morgan') || idLower.includes('david')) selectedVoice = 'Charon'; // Deep baritone / cinematic US male
-        else if (idLower.includes('marcus')) selectedVoice = 'Fenrir';  // Warm storyteller US male
-        else if (idLower.includes('wyatt') || idLower.includes('caleb')) selectedVoice = 'Puck'; // Texas drawl / Vibrant tenor US male
-        else if (idLower.includes('claire')) selectedVoice = 'Kore';    // Warm US female
-        else if (idLower.includes('ava')) selectedVoice = 'Zephyr';     // Smooth melodic US female
-        else if (idLower.includes('emma')) selectedVoice = 'Kore';      // Bright US female
-        else if (idLower.includes('mark') || idLower.includes('arthur')) selectedVoice = 'Fenrir'; // BBC wildlife / Classical British male baritone
-        else if (idLower.includes('oliver')) selectedVoice = 'Puck';    // Modern British male tenor
-        else if (idLower.includes('eleanor')) selectedVoice = 'Zephyr'; // Sophisticated British female
-        else if (idLower.includes('charlotte')) selectedVoice = 'Kore'; // Bright British female
-      }
-
-      const VALID_GEMINI_VOICES = ['Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr'];
-      if (!selectedVoice || !VALID_GEMINI_VOICES.includes(selectedVoice)) {
-        if (gender === 'female') {
-          selectedVoice = accent === 'british' ? 'Zephyr' : 'Kore';
-        } else {
-          selectedVoice = accent === 'british' ? 'Fenrir' : 'Charon';
-        }
-      }
+      const profile = resolveNarratorProfile(voiceId, accent, gender);
+      const selectedVoice = profile.geminiVoice;
 
       // Clean narration text for audio synthesis
       const cleanText = text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -421,47 +608,37 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
           audioBase64: base64Wav,
           duration: durationSeconds,
           sampleRate,
-          voiceUsed: selectedVoice,
+          voiceUsed: profile.name,
+          voiceId: profile.id,
           isClientFallback: false,
-          accent,
-          gender,
+          accent: profile.accent,
+          gender: profile.gender,
         });
       }
 
       // If Gemini TTS is quota-limited or unavailable, fall back cleanly to client voice synthesizer with true gender & accent preservation
       return res.json({
         isClientFallback: true,
-        voiceUsed:
-          gender === 'male'
-            ? accent === 'british'
-              ? 'Arthur (Classical Baritone)'
-              : 'David (Deep Baritone)'
-            : accent === 'british'
-            ? 'Eleanor (Warm Literary)'
-            : 'Claire (Warm Storyteller)',
+        voiceUsed: profile.name,
+        voiceId: profile.id,
         duration: estimatedDurationSeconds,
-        accent: accent || 'american',
-        gender: gender || 'male',
+        accent: profile.accent,
+        gender: profile.gender,
       });
     } catch (err: any) {
       console.error('Error in /api/generate-speech:', err);
-      const { text, accent, gender } = req.body || {};
+      const { text, accent, gender, voiceId } = req.body || {};
+      const profile = resolveNarratorProfile(voiceId, accent, gender);
       const words = (text || '').split(/\s+/).filter(Boolean);
       const estimatedDurationSeconds = Math.max(3, Math.round((words.length / 140) * 60));
 
       return res.json({
         isClientFallback: true,
-        voiceUsed:
-          gender === 'male'
-            ? accent === 'british'
-              ? 'Arthur (Classical Baritone)'
-              : 'David (Deep Baritone)'
-            : accent === 'british'
-            ? 'Eleanor (Warm Literary)'
-            : 'Claire (Warm Storyteller)',
+        voiceUsed: profile.name,
+        voiceId: profile.id,
         duration: estimatedDurationSeconds,
-        accent: accent || 'american',
-        gender: gender || 'male',
+        accent: profile.accent,
+        gender: profile.gender,
       });
     }
   });

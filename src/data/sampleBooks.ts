@@ -126,6 +126,15 @@ When you engage in actual fighting, if victory is long in coming, then men's wea
 
 export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
   {
+    id: 'am-male-marcus',
+    name: 'Marcus (Warm Storyteller)',
+    accent: 'american',
+    gender: 'male',
+    geminiVoice: 'Orpheus',
+    description: 'Natural, resonant, and expressive American male narration with authentic human cadence.',
+    sampleText: 'Welcome to this audiobook edition. Let us begin our journey together through chapter one.'
+  },
+  {
     id: 'am-male-morgan',
     name: 'Morgan (Deep Cinematic Storyteller)',
     accent: 'american',
@@ -139,18 +148,9 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'David (Deep Baritone)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Charon',
+    geminiVoice: 'Fenrir',
     description: 'Rich, cinematic, and authoritative American male voice tailored for grand epics and history.',
     sampleText: 'Welcome. Settle in and prepare to explore the depths of this literary masterpiece.'
-  },
-  {
-    id: 'am-male-marcus',
-    name: 'Marcus (Warm Storyteller)',
-    accent: 'american',
-    gender: 'male',
-    geminiVoice: 'Fenrir',
-    description: 'Natural, resonant, and expressive American male narration with authentic human cadence.',
-    sampleText: 'Welcome to this audiobook edition. Let us begin our journey together through chapter one.'
   },
   {
     id: 'am-male-wyatt',
@@ -166,7 +166,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Caleb (Vibrant & Energetic)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Puck',
+    geminiVoice: 'Pegasus',
     description: 'Energetic, crisp, and youthful American male voice ideal for fast-paced adventures and modern thrillers.',
     sampleText: 'Hey there! Fasten your seatbelt as we dive straight into chapter one of this thrilling adventure.'
   },
@@ -184,7 +184,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Ava (Smooth & Melodic)',
     accent: 'american',
     gender: 'female',
-    geminiVoice: 'Zephyr',
+    geminiVoice: 'Aoede',
     description: 'Sophisticated, expressive, and natural American female narrator with fluid rhythm.',
     sampleText: 'Welcome to the audio edition. We invite you to sit back, relax, and enjoy the reading.'
   },
@@ -193,9 +193,27 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Emma (Bright & Expressive)',
     accent: 'american',
     gender: 'female',
-    geminiVoice: 'Kore',
+    geminiVoice: 'Leda',
     description: 'Bright, articulate, and youthful American female narration with crystal clarity.',
     sampleText: 'Welcome to this audiobook. Let these words unfold vividly as we begin our story.'
+  },
+  {
+    id: 'br-male-jarvis',
+    name: 'JARVIS AI',
+    accent: 'british',
+    gender: 'male',
+    geminiVoice: 'Charon',
+    description: 'Calm, cultured, and sophisticated British AI assistant voice inspired by actor Paul Bettany (J.A.R.V.I.S.). Features refined British RP diction, suave composure, and effortless intelligence.',
+    sampleText: 'Good day. Systems are fully calibrated and operational. At your service, shall we proceed with the narration?'
+  },
+  {
+    id: 'br-male-oliver',
+    name: 'Oliver (Modern & Articulate)',
+    accent: 'british',
+    gender: 'male',
+    geminiVoice: 'Puck',
+    description: 'Clear, engaging British male voice with natural modern cadence and refined diction.',
+    sampleText: 'Welcome to this audiobook. Let us delve into the remarkable narrative that lies ahead.'
   },
   {
     id: 'br-male-mark',
@@ -211,18 +229,9 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Arthur (Classical Baritone)',
     accent: 'british',
     gender: 'male',
-    geminiVoice: 'Fenrir',
+    geminiVoice: 'Orpheus',
     description: 'Distinguished British male baritone with classic theatrical cadence and deep resonance.',
     sampleText: 'Good day and welcome to this audio edition. We shall now commence our journey.'
-  },
-  {
-    id: 'br-male-oliver',
-    name: 'Oliver (Modern & Articulate)',
-    accent: 'british',
-    gender: 'male',
-    geminiVoice: 'Puck',
-    description: 'Clear, engaging British male voice with natural modern cadence and refined diction.',
-    sampleText: 'Welcome to this audiobook. Let us delve into the remarkable narrative that lies ahead.'
   },
   {
     id: 'br-female-eleanor',
@@ -238,7 +247,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Charlotte (Bright & Expressive)',
     accent: 'british',
     gender: 'female',
-    geminiVoice: 'Kore',
+    geminiVoice: 'Aoede',
     description: 'Bright, articulate, and elegant British female voice with sparkling clarity.',
     sampleText: 'Welcome to this audio edition. I am delighted to guide you through each chapter.'
   }

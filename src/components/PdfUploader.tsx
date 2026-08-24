@@ -90,117 +90,8 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
         </p>
       </div>
 
-      {/* Drop Zone */}
-      <div
-        id="pdf-dropzone"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all ${
-          isDragOver
-            ? isDark
-              ? 'border-indigo-500 bg-stone-800/80 scale-[1.01]'
-              : isRainbow
-              ? 'border-pink-400 bg-pink-50/60 scale-[1.01]'
-              : 'border-stone-900 bg-stone-100/70 scale-[1.01]'
-            : selectedFileName
-            ? isDark
-              ? 'border-emerald-700 bg-emerald-950/20'
-              : isRainbow
-              ? 'border-emerald-400 bg-emerald-50/60 shadow-xs'
-              : 'border-emerald-500 bg-emerald-50/40'
-            : isDark
-            ? 'border-stone-700 bg-stone-950/50 hover:border-stone-600 hover:bg-stone-800/60'
-            : isRainbow
-            ? 'border-sky-200/90 bg-sky-50/50 hover:border-sky-300 hover:bg-sky-50/80'
-            : 'border-stone-300 bg-stone-50/60 hover:border-stone-400 hover:bg-stone-50'
-        }`}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,application/pdf,text/plain"
-          onChange={handleInputChange}
-          className="hidden"
-          id="pdf-file-input"
-        />
-
-        {selectedFileName ? (
-          <div className="flex flex-col items-center">
-            <div
-              className={`flex h-12 w-12 items-center justify-center rounded-full ${
-                isDark
-                  ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50'
-                  : isRainbow
-                  ? 'bg-gradient-to-tr from-emerald-400 to-teal-400 text-white shadow-xs'
-                  : 'bg-emerald-100 text-emerald-700'
-              }`}
-            >
-              <CheckCircle2 className="h-6 w-6" />
-            </div>
-            <p
-              className={`mt-2 text-sm font-semibold max-w-[240px] truncate ${
-                isDark ? 'text-stone-100' : isRainbow ? 'text-slate-900' : 'text-stone-900'
-              }`}
-            >
-              {selectedFileName}
-            </p>
-            <p
-              className={`text-xs font-medium mt-0.5 ${
-                isDark ? 'text-emerald-400' : isRainbow ? 'text-emerald-700 font-semibold' : 'text-emerald-700'
-              }`}
-            >
-              Document loaded • Click to replace
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center">
-            <div
-              className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
-                isDark
-                  ? 'bg-stone-800 text-stone-300 border border-stone-700'
-                  : isRainbow
-                  ? 'bg-gradient-to-tr from-sky-400 to-indigo-400 text-white shadow-xs'
-                  : 'bg-stone-200 text-stone-700'
-              }`}
-            >
-              <UploadCloud className="h-6 w-6" />
-            </div>
-            <p
-              className={`mt-3 text-sm font-medium ${
-                isDark ? 'text-stone-200' : isRainbow ? 'text-slate-800' : 'text-stone-900'
-              }`}
-            >
-              Drop your PDF here, or{' '}
-              <span
-                className={`underline font-semibold ${
-                  isDark ? 'text-indigo-400' : isRainbow ? 'text-sky-600' : 'text-stone-900'
-                }`}
-              >
-                browse
-              </span>
-            </p>
-            <p className={`mt-1 text-xs ${isDark ? 'text-stone-400' : isRainbow ? 'text-slate-500' : 'text-stone-500'}`}>
-              Supports standard PDFs, books, manuscripts (.pdf)
-            </p>
-          </div>
-        )}
-      </div>
-
-      {dragError && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-rose-600">
-          <AlertCircle className="h-3.5 w-3.5" />
-          <span>{dragError}</span>
-        </div>
-      )}
-
-      {/* Quick Sample Books Section */}
-      <div
-        className={`mt-4 pt-4 border-t ${
-          isDark ? 'border-stone-800' : isRainbow ? 'border-sky-100' : 'border-stone-100'
-        }`}
-      >
+      {/* Quick Sample Books Section (Moved to Top) */}
+      <div className="mb-4">
         <div className="mb-2 flex items-center justify-between">
           <span
             className={`flex items-center gap-1.5 text-xs font-medium ${
@@ -276,6 +167,117 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
           })}
         </div>
       </div>
+
+      {/* Drop Zone (Moved Below Sample Books) */}
+      <div
+        className={`pt-4 border-t ${
+          isDark ? 'border-stone-800' : isRainbow ? 'border-sky-100' : 'border-stone-100'
+        }`}
+      >
+        <div
+          id="pdf-dropzone"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all ${
+            isDragOver
+              ? isDark
+                ? 'border-indigo-500 bg-stone-800/80 scale-[1.01]'
+                : isRainbow
+                ? 'border-pink-400 bg-pink-50/60 scale-[1.01]'
+                : 'border-stone-900 bg-stone-100/70 scale-[1.01]'
+              : selectedFileName
+              ? isDark
+                ? 'border-emerald-700 bg-emerald-950/20'
+                : isRainbow
+                ? 'border-emerald-400 bg-emerald-50/60 shadow-xs'
+                : 'border-emerald-500 bg-emerald-50/40'
+              : isDark
+              ? 'border-stone-700 bg-stone-950/50 hover:border-stone-600 hover:bg-stone-800/60'
+              : isRainbow
+              ? 'border-sky-200/90 bg-sky-50/50 hover:border-sky-300 hover:bg-sky-50/80'
+              : 'border-stone-300 bg-stone-50/60 hover:border-stone-400 hover:bg-stone-50'
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf,text/plain"
+            onChange={handleInputChange}
+            className="hidden"
+            id="pdf-file-input"
+          />
+
+          {selectedFileName ? (
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-full ${
+                  isDark
+                    ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50'
+                    : isRainbow
+                    ? 'bg-gradient-to-tr from-emerald-400 to-teal-400 text-white shadow-xs'
+                    : 'bg-emerald-100 text-emerald-700'
+                }`}
+              >
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <p
+                className={`mt-2 text-sm font-semibold max-w-[240px] truncate ${
+                  isDark ? 'text-stone-100' : isRainbow ? 'text-slate-900' : 'text-stone-900'
+                }`}
+              >
+                {selectedFileName}
+              </p>
+              <p
+                className={`text-xs font-medium mt-0.5 ${
+                  isDark ? 'text-emerald-400' : isRainbow ? 'text-emerald-700 font-semibold' : 'text-emerald-700'
+                }`}
+              >
+                Document loaded • Click to replace
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
+                  isDark
+                    ? 'bg-stone-800 text-stone-300 border border-stone-700'
+                    : isRainbow
+                    ? 'bg-gradient-to-tr from-sky-400 to-indigo-400 text-white shadow-xs'
+                    : 'bg-stone-200 text-stone-700'
+                }`}
+              >
+                <UploadCloud className="h-6 w-6" />
+              </div>
+              <p
+                className={`mt-3 text-sm font-medium ${
+                  isDark ? 'text-stone-200' : isRainbow ? 'text-slate-800' : 'text-stone-900'
+                }`}
+              >
+                Drop your PDF here, or{' '}
+                <span
+                  className={`underline font-semibold ${
+                    isDark ? 'text-indigo-400' : isRainbow ? 'text-sky-600' : 'text-stone-900'
+                  }`}
+                >
+                  browse
+                </span>
+              </p>
+              <p className={`mt-1 text-xs ${isDark ? 'text-stone-400' : isRainbow ? 'text-slate-500' : 'text-stone-500'}`}>
+                Supports standard PDFs, books, manuscripts (.pdf)
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {dragError && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-rose-600">
+          <AlertCircle className="h-3.5 w-3.5" />
+          <span>{dragError}</span>
+        </div>
+      )}
     </div>
   );
 };

@@ -41,23 +41,28 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     availableVoices[0] ||
     VOICE_OPTIONS[0];
 
+  const stopSamplePlayback = () => {
+    stopLiveBrowserSpeech();
+    setTestingVoiceId(null);
+  };
+
   const handleTestVoice = (voiceId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (disabled) return;
 
-    stopLiveBrowserSpeech();
+    if (testingVoiceId === voiceId) {
+      stopSamplePlayback();
+      return;
+    }
+
+    stopSamplePlayback();
 
     const voice = VOICE_OPTIONS.find((v) => v.id === voiceId) || activeVoice;
     if (!voice) return;
 
-    if (testingVoiceId === voice.id) {
-      setTestingVoiceId(null);
-      return;
-    }
-
     setTestingVoiceId(voice.id);
 
-    // Speak sample text with natural timbre and distinct persona profile
+    // Speak sample text with distinct voice profile, accent, pitch, and timbre
     playLiveBrowserSpeech(
       voice.sampleText,
       voice.accent,
@@ -137,28 +142,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         </label>
         <div className="grid grid-cols-2 gap-2">
           <button
-            id="accent-american-btn"
-            type="button"
-            disabled={disabled}
-            onClick={() => handleAccentSelect('american')}
-            className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 text-sm font-medium transition-all ${
-              accent === 'american'
-                ? isDark
-                  ? 'border-indigo-500 bg-indigo-950/50 text-indigo-200 ring-1 ring-indigo-500/50 shadow-xs'
-                  : isRainbow
-                  ? 'border-purple-400 bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-xs'
-                  : 'border-stone-900 bg-stone-900 text-white shadow-xs'
-                : isDark
-                ? 'border-stone-800 bg-stone-950/50 text-stone-300 hover:bg-stone-800/80 hover:border-stone-700'
-                : isRainbow
-                ? 'border-purple-200/70 bg-purple-50/40 text-slate-800 hover:bg-purple-50 hover:border-purple-300'
-                : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
-            }`}
-          >
-            <span className="text-base">🇺🇸</span>
-            <span>American</span>
-          </button>
-          <button
             id="accent-british-btn"
             type="button"
             disabled={disabled}
@@ -166,10 +149,10 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
             className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 text-sm font-medium transition-all ${
               accent === 'british'
                 ? isDark
-                  ? 'border-indigo-500 bg-indigo-950/50 text-indigo-200 ring-1 ring-indigo-500/50 shadow-xs'
+                  ? 'border-indigo-500 bg-indigo-950/50 text-indigo-200 ring-1 ring-indigo-500/50 shadow-xs font-semibold'
                   : isRainbow
-                  ? 'border-purple-400 bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-xs'
-                  : 'border-stone-900 bg-stone-900 text-white shadow-xs'
+                  ? 'border-purple-400 bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-xs font-semibold'
+                  : 'border-stone-900 bg-stone-900 text-white shadow-xs font-semibold'
                 : isDark
                 ? 'border-stone-800 bg-stone-950/50 text-stone-300 hover:bg-stone-800/80 hover:border-stone-700'
                 : isRainbow
@@ -179,6 +162,28 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
           >
             <span className="text-base">🇬🇧</span>
             <span>British</span>
+          </button>
+          <button
+            id="accent-american-btn"
+            type="button"
+            disabled={disabled}
+            onClick={() => handleAccentSelect('american')}
+            className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 text-sm font-medium transition-all ${
+              accent === 'american'
+                ? isDark
+                  ? 'border-indigo-500 bg-indigo-950/50 text-indigo-200 ring-1 ring-indigo-500/50 shadow-xs font-semibold'
+                  : isRainbow
+                  ? 'border-purple-400 bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-xs font-semibold'
+                  : 'border-stone-900 bg-stone-900 text-white shadow-xs font-semibold'
+                : isDark
+                ? 'border-stone-800 bg-stone-950/50 text-stone-300 hover:bg-stone-800/80 hover:border-stone-700'
+                : isRainbow
+                ? 'border-purple-200/70 bg-purple-50/40 text-slate-800 hover:bg-purple-50 hover:border-purple-300'
+                : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
+            }`}
+          >
+            <span className="text-base">🇺🇸</span>
+            <span>American</span>
           </button>
         </div>
       </div>
