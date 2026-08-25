@@ -22,10 +22,13 @@ export interface Chapter {
   estimatedMinutes: number;
   audioUrl?: string; // data url or blob url
   audioBase64?: string;
+  audioMimeType?: string;
+  audioFileExtension?: 'mp3' | 'wav';
   audioDuration?: number;
   status: 'idle' | 'generating' | 'ready' | 'error';
   errorMessage?: string;
   isClientFallback?: boolean;
+  isDownloadable?: boolean;
   voiceUsed?: string;
   accentUsed?: Accent;
   genderUsed?: VoiceGender;
@@ -42,9 +45,12 @@ export interface GeneratedAudioFile {
   voiceName: string;
   audioUrl: string;
   audioBase64?: string;
+  audioMimeType?: string;
+  audioFileExtension?: 'mp3' | 'wav';
   audioDuration: number;
   createdAt: number;
   isClientFallback?: boolean;
+  isDownloadable?: boolean;
 }
 
 export interface BookProject {

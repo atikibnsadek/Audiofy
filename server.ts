@@ -3,39 +3,8 @@ import path from 'path';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
-import lamejs from 'lamejs-121-bug';
 
 dotenv.config();
-
-function convertPcmToMp3(pcmBuffer: Buffer, sampleRate = 24000, kbps = 128): Buffer {
-  try {
-    const encoder = new lamejs.Mp3Encoder(1, sampleRate, kbps);
-    const samples = new Int16Array(
-      pcmBuffer.buffer,
-      pcmBuffer.byteOffset,
-      Math.floor(pcmBuffer.length / 2)
-    );
-
-    const mp3Chunks: Buffer[] = [];
-    const sampleBlockSize = 1152;
-    for (let i = 0; i < samples.length; i += sampleBlockSize) {
-      const sampleChunk = samples.subarray(i, i + sampleBlockSize);
-      const mp3buf = encoder.encodeBuffer(sampleChunk);
-      if (mp3buf && mp3buf.length > 0) {
-        mp3Chunks.push(Buffer.from(mp3buf));
-      }
-    }
-    const mp3flush = encoder.flush();
-    if (mp3flush && mp3flush.length > 0) {
-      mp3Chunks.push(Buffer.from(mp3flush));
-    }
-    return Buffer.concat(mp3Chunks);
-  } catch (err) {
-    console.error('PCM to MP3 conversion error, falling back to WAV:', err);
-    const wavHeader = createWavHeader(pcmBuffer.length, sampleRate, 1, 16);
-    return Buffer.concat([wavHeader, pcmBuffer]);
-  }
-}
 
 function createWavHeader(dataLength: number, sampleRate = 24000, numChannels = 1, bitsPerSample = 16): Buffer {
   const header = Buffer.alloc(44);
@@ -426,13 +395,15 @@ async function startServer() {
 
       if (pcmBuffer && pcmBuffer.length > 0) {
         const sampleRate = 24000;
-        const mp3Buffer = convertPcmToMp3(pcmBuffer, sampleRate, 128);
+        const wavBuffer = Buffer.concat([createWavHeader(pcmBuffer.length, sampleRate), pcmBuffer]);
         const durationSeconds = pcmBuffer.length / (sampleRate * 2);
-        const base64Mp3 = mp3Buffer.toString('base64');
+        const base64Wav = wavBuffer.toString('base64');
 
         const result = {
-          audioUrl: `data:audio/mp3;base64,${base64Mp3}`,
-          audioBase64: base64Mp3,
+          audioUrl: `data:audio/wav;base64,${base64Wav}`,
+          audioBase64: base64Wav,
+          audioMimeType: 'audio/wav',
+          audioFileExtension: 'wav',
           duration: durationSeconds,
           voiceId: profile.id,
           voiceName: profile.name,
@@ -682,17 +653,20 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
         }
       }
 
-      // If all chunks were synthesized via Gemini TTS, create the MP3 audio container
+      // Gemini returns raw 24 kHz, 16-bit, mono PCM. Wrap it directly in WAV; do
+      // not label an encoder fallback as MP3, which produces corrupt downloads.
       if (allChunksSucceeded && pcmBuffers.length === chunks.length && pcmBuffers.length > 0) {
         const combinedPcm = Buffer.concat(pcmBuffers);
         const sampleRate = 24000;
-        const mp3Buffer = convertPcmToMp3(combinedPcm, sampleRate, 128);
+        const wavBuffer = Buffer.concat([createWavHeader(combinedPcm.length, sampleRate), combinedPcm]);
         const durationSeconds = combinedPcm.length / (sampleRate * 2);
-        const base64Mp3 = mp3Buffer.toString('base64');
+        const base64Wav = wavBuffer.toString('base64');
 
         return res.json({
-          audioUrl: `data:audio/mp3;base64,${base64Mp3}`,
-          audioBase64: base64Mp3,
+          audioUrl: `data:audio/wav;base64,${base64Wav}`,
+          audioBase64: base64Wav,
+          audioMimeType: 'audio/wav',
+          audioFileExtension: 'wav',
           duration: durationSeconds,
           sampleRate,
           voiceUsed: profile.name,

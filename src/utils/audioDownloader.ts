@@ -4,7 +4,7 @@ import { Chapter, GeneratedAudioFile } from '../types';
 /**
  * Safely resolves any combination of base64 string or audioUrl (blob:, data:, http) into a clean, uncorrupted audio Blob.
  */
-async function resolveAudioBlob(audioBase64?: string, audioUrl?: string): Promise<Blob | null> {
+async function resolveAudioBlob(audioBase64?: string, audioUrl?: string, audioMimeType?: string): Promise<Blob | null> {
   // 1. Prefer direct browser fetching of data: or blob: or http: URLs for byte-accurate Blobs
   if (audioUrl && (audioUrl.startsWith('blob:') || audioUrl.startsWith('data:') || audioUrl.startsWith('http'))) {
     try {
@@ -32,7 +32,7 @@ async function resolveAudioBlob(audioBase64?: string, audioUrl?: string): Promis
         for (let i = 0; i < len; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
-        return new Blob([bytes.buffer], { type: 'audio/mp3' });
+        return new Blob([bytes.buffer], { type: audioMimeType || 'audio/wav' });
       } catch (err) {
         console.error('Base64 decode failed for audio download:', err);
       }
@@ -54,10 +54,10 @@ function triggerBlobDownload(blob: Blob, filename: string): void {
 }
 
 export async function downloadSingleAudio(chapter: Chapter, bookTitle: string): Promise<void> {
-  if (!chapter.audioUrl && !chapter.audioBase64) return;
+  if ((!chapter.audioUrl && !chapter.audioBase64) || chapter.isDownloadable === false) return;
 
   try {
-    const blob = await resolveAudioBlob(chapter.audioBase64, chapter.audioUrl);
+    const blob = await resolveAudioBlob(chapter.audioBase64, chapter.audioUrl, chapter.audioMimeType);
     if (!blob || blob.size === 0) {
       console.warn('No valid audio blob found for chapter download');
       return;
@@ -67,7 +67,8 @@ export async function downloadSingleAudio(chapter: Chapter, bookTitle: string): 
     const sanitizedChapter = (chapter.title || `Chapter_${chapter.chapterNumber}`).replace(/[^a-zA-Z0-9_-]/g, '_');
     const accentLabel = chapter.accentUsed === 'british' ? 'British' : 'American';
     const genderLabel = chapter.genderUsed === 'female' ? 'Female' : 'Male';
-    const filename = `${sanitizedBook}_Ch${chapter.chapterNumber.toString().padStart(2, '0')}_${sanitizedChapter}_${accentLabel}_${genderLabel}.mp3`;
+    const extension = chapter.audioFileExtension || (chapter.audioMimeType === 'audio/wav' ? 'wav' : 'mp3');
+    const filename = `${sanitizedBook}_Ch${chapter.chapterNumber.toString().padStart(2, '0')}_${sanitizedChapter}_${accentLabel}_${genderLabel}.${extension}`;
 
     triggerBlobDownload(blob, filename);
   } catch (err) {
@@ -76,10 +77,10 @@ export async function downloadSingleAudio(chapter: Chapter, bookTitle: string): 
 }
 
 export async function downloadGeneratedAudioFile(file: GeneratedAudioFile): Promise<void> {
-  if (!file.audioUrl && !file.audioBase64) return;
+  if ((!file.audioUrl && !file.audioBase64) || file.isDownloadable === false) return;
 
   try {
-    const blob = await resolveAudioBlob(file.audioBase64, file.audioUrl);
+    const blob = await resolveAudioBlob(file.audioBase64, file.audioUrl, file.audioMimeType);
     if (!blob || blob.size === 0) {
       console.warn('No valid audio blob found for generated audio download');
       return;
@@ -89,7 +90,8 @@ export async function downloadGeneratedAudioFile(file: GeneratedAudioFile): Prom
     const sanitizedChapter = (file.chapterTitle || `Chapter_${file.chapterNumber}`).replace(/[^a-zA-Z0-9_-]/g, '_');
     const accentLabel = file.accent === 'british' ? 'British' : 'American';
     const genderLabel = file.gender === 'female' ? 'Female' : 'Male';
-    const filename = `${sanitizedBook}_Ch${file.chapterNumber.toString().padStart(2, '0')}_${sanitizedChapter}_${accentLabel}_${genderLabel}.mp3`;
+    const extension = file.audioFileExtension || (file.audioMimeType === 'audio/wav' ? 'wav' : 'mp3');
+    const filename = `${sanitizedBook}_Ch${file.chapterNumber.toString().padStart(2, '0')}_${sanitizedChapter}_${accentLabel}_${genderLabel}.${extension}`;
 
     triggerBlobDownload(blob, filename);
   } catch (err) {
@@ -118,11 +120,13 @@ export async function downloadStoredAudiosAsZip(
     const sanitizedTitle = (file.chapterTitle || `Chapter_${file.chapterNumber}`).replace(/[^a-zA-Z0-9_-]/g, '_');
     const accentLabel = file.accent === 'british' ? 'British' : 'American';
     const genderLabel = file.gender === 'female' ? 'Female' : 'Male';
-    const filename = `Ch${paddedNum}_${sanitizedTitle}_${accentLabel}_${genderLabel}_${file.id.slice(-4)}.mp3`;
+    if (file.isDownloadable === false) continue;
+    const extension = file.audioFileExtension || (file.audioMimeType === 'audio/wav' ? 'wav' : 'mp3');
+    const filename = `Ch${paddedNum}_${sanitizedTitle}_${accentLabel}_${genderLabel}_${file.id.slice(-4)}.${extension}`;
 
     manifest += `${index + 1}. [Ch ${file.chapterNumber}] ${file.chapterTitle} | ${accentLabel} ${genderLabel} (${file.voiceName}) | ${Math.round(file.audioDuration || 0)}s\n`;
 
-    const blob = await resolveAudioBlob(file.audioBase64, file.audioUrl);
+    const blob = await resolveAudioBlob(file.audioBase64, file.audioUrl, file.audioMimeType);
     if (blob) {
       const arrayBuf = await blob.arrayBuffer();
       folder.file(filename, arrayBuf);
@@ -159,7 +163,7 @@ export async function downloadAllChaptersAsZip(
   bookTitle: string,
   onProgress?: (percent: number) => void
 ): Promise<void> {
-  const readyChapters = chapters.filter((ch) => ch.audioBase64 || ch.audioUrl);
+  const readyChapters = chapters.filter((ch) => (ch.audioBase64 || ch.audioUrl) && ch.isDownloadable !== false);
   if (readyChapters.length === 0) return;
 
   const zip = new JSZip();
@@ -174,11 +178,12 @@ export async function downloadAllChaptersAsZip(
     const ch = readyChapters[index];
     const paddedNum = ch.chapterNumber.toString().padStart(2, '0');
     const sanitizedTitle = ch.title.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const filename = `Chapter_${paddedNum}_${sanitizedTitle}.mp3`;
+    const extension = ch.audioFileExtension || (ch.audioMimeType === 'audio/wav' ? 'wav' : 'mp3');
+    const filename = `Chapter_${paddedNum}_${sanitizedTitle}.${extension}`;
 
     playlistManifest += `${paddedNum}. ${ch.title} (${Math.round(ch.audioDuration || 0)}s)\n`;
 
-    const blob = await resolveAudioBlob(ch.audioBase64, ch.audioUrl);
+    const blob = await resolveAudioBlob(ch.audioBase64, ch.audioUrl, ch.audioMimeType);
     if (blob) {
       const arrayBuf = await blob.arrayBuffer();
       folder.file(filename, arrayBuf);
