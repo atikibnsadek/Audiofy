@@ -421,7 +421,7 @@ export const ChapterList: React.FC<ChapterListProps> = ({
                         id={`download-chapter-${chapter.chapterNumber}`}
                         type="button"
                         onClick={() => onDownloadSingle(chapter)}
-                        title="Download Chapter Audio (.wav)"
+                        title="Download Chapter Audio (.mp3)"
                         className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
                           isDark
                             ? 'border-stone-700 bg-stone-800 text-stone-300 hover:bg-stone-700 hover:text-stone-100'

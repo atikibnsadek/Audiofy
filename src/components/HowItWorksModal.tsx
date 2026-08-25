@@ -70,7 +70,7 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClos
             <div>
               <p className="font-semibold text-stone-900">Listen & Download</p>
               <p className="text-xs text-stone-500 mt-0.5">
-                Play using the built-in player (volume, speed, scrubber), or download chapter audio files (.wav) or a full ZIP bundle!
+                Play using the built-in player (volume, speed, scrubber), or download chapter audio files (.mp3) or a full ZIP bundle!
               </p>
             </div>
           </div>

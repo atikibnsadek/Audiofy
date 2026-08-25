@@ -3,8 +3,39 @@ import path from 'path';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
+import lamejs from 'lamejs-121-bug';
 
 dotenv.config();
+
+function convertPcmToMp3(pcmBuffer: Buffer, sampleRate = 24000, kbps = 128): Buffer {
+  try {
+    const encoder = new lamejs.Mp3Encoder(1, sampleRate, kbps);
+    const samples = new Int16Array(
+      pcmBuffer.buffer,
+      pcmBuffer.byteOffset,
+      Math.floor(pcmBuffer.length / 2)
+    );
+
+    const mp3Chunks: Buffer[] = [];
+    const sampleBlockSize = 1152;
+    for (let i = 0; i < samples.length; i += sampleBlockSize) {
+      const sampleChunk = samples.subarray(i, i + sampleBlockSize);
+      const mp3buf = encoder.encodeBuffer(sampleChunk);
+      if (mp3buf && mp3buf.length > 0) {
+        mp3Chunks.push(Buffer.from(mp3buf));
+      }
+    }
+    const mp3flush = encoder.flush();
+    if (mp3flush && mp3flush.length > 0) {
+      mp3Chunks.push(Buffer.from(mp3flush));
+    }
+    return Buffer.concat(mp3Chunks);
+  } catch (err) {
+    console.error('PCM to MP3 conversion error, falling back to WAV:', err);
+    const wavHeader = createWavHeader(pcmBuffer.length, sampleRate, 1, 16);
+    return Buffer.concat([wavHeader, pcmBuffer]);
+  }
+}
 
 function createWavHeader(dataLength: number, sampleRate = 24000, numChannels = 1, bitsPerSample = 16): Buffer {
   const header = Buffer.alloc(44);
@@ -166,7 +197,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Marcus (Warm Storyteller)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Orpheus',
+    geminiVoice: 'Orus',
     systemInstruction: 'You are Marcus, a warm, expressive, and conversational American male storyteller. Read the text with friendly natural warmth, melodic inflection, and engaging emotional connection.',
     sampleText: 'Welcome to this audiobook edition. Let us begin our journey together through chapter one.'
   },
@@ -184,7 +215,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Caleb (Vibrant & Energetic)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Pegasus',
+    geminiVoice: 'Enceladus',
     systemInstruction: 'You are Caleb, a youthful, crisp, and energetic American male tenor narrator. Read the text with brisk upbeat tempo, vibrant modern enthusiasm, and sharp articulation ideal for thrillers and fast adventure.',
     sampleText: 'Hey there! Fasten your seatbelt as we dive straight into chapter one of this thrilling adventure.'
   },
@@ -238,7 +269,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Arthur (Classical Baritone)',
     accent: 'british',
     gender: 'male',
-    geminiVoice: 'Orpheus',
+    geminiVoice: 'Iapetus',
     systemInstruction: 'You are Arthur, a classical British Oxford gentleman baritone narrator. Read the text with stately Victorian elegance, dry dignified wit, formal British RP cadence, and rich theatrical depth.',
     sampleText: 'Good day and welcome to this audio edition. We shall now commence our journey.'
   },
@@ -272,6 +303,73 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
 };
 
 const sampleAudioCache = new Map<string, { audioUrl: string; audioBase64: string; duration: number; voiceId: string; voiceName: string }>();
+
+const ALLOWED_GEMINI_VOICES = new Set([
+  'achernar', 'achird', 'algenib', 'algieba', 'alnilam', 'aoede', 'autonoe',
+  'callirrhoe', 'charon', 'despina', 'enceladus', 'erinome', 'fenrir',
+  'gacrux', 'iapetus', 'kore', 'laomedeia', 'leda', 'orus', 'puck',
+  'pulcherrima', 'rasalgethi', 'sadachbia', 'sadaltager', 'schedar',
+  'sulafat', 'umbriel', 'vindemiatrix', 'zephyr', 'zubenelgenubi'
+]);
+
+function normalizeGeminiVoice(voiceName: string): string {
+  if (!voiceName) return 'puck';
+  const lower = voiceName.toLowerCase().trim();
+  if (ALLOWED_GEMINI_VOICES.has(lower)) {
+    return lower;
+  }
+  // Mappings for common names or previous aliases
+  if (lower.includes('orpheus') || lower.includes('marcus') || lower.includes('arthur')) return 'orus';
+  if (lower.includes('pegasus') || lower.includes('caleb')) return 'enceladus';
+  if (lower.includes('charon') || lower.includes('morgan') || lower.includes('jarvis')) return 'charon';
+  if (lower.includes('fenrir') || lower.includes('david') || lower.includes('mark')) return 'fenrir';
+  if (lower.includes('puck') || lower.includes('wyatt') || lower.includes('oliver')) return 'puck';
+  if (lower.includes('kore') || lower.includes('claire')) return 'kore';
+  if (lower.includes('aoede') || lower.includes('ava') || lower.includes('charlotte')) return 'aoede';
+  if (lower.includes('leda') || lower.includes('emma')) return 'leda';
+  if (lower.includes('zephyr') || lower.includes('eleanor')) return 'zephyr';
+  if (lower.includes('iapetus')) return 'iapetus';
+  return 'puck';
+}
+
+async function generateTTSAudioWithFallback(
+  ai: GoogleGenAI,
+  text: string,
+  voiceName: string
+): Promise<Buffer | null> {
+  const normalizedVoice = normalizeGeminiVoice(voiceName);
+  const TTS_MODELS = [
+    'gemini-3.1-flash-tts-preview',
+  ];
+  for (const model of TTS_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: [{ parts: [{ text }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: normalizedVoice },
+            },
+          },
+        },
+      });
+      const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (data) {
+        return Buffer.from(data, 'base64');
+      }
+    } catch (err: any) {
+      const isQuotaError = err?.status === 'RESOURCE_EXHAUSTED' || err?.message?.includes('quota') || err?.message?.includes('429');
+      if (isQuotaError) {
+        console.warn(`TTS quota limit hit for model ${model} (will fallback smoothly to client speech synthesis)`);
+      } else {
+        console.warn(`TTS attempt with model ${model} failed:`, err?.message || err);
+      }
+    }
+  }
+  return null;
+}
 
 function resolveNarratorProfile(voiceId?: string, accent?: string, gender?: string): NarratorProfile {
   if (voiceId && NARRATOR_PROFILES[voiceId]) {
@@ -324,43 +422,49 @@ async function startServer() {
       }
 
       const ai = getGeminiClient();
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-tts-preview',
-        contents: [{ parts: [{ text: profile.sampleText }] }],
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: profile.geminiVoice },
-            },
-          },
-        },
-      });
+      const pcmBuffer = await generateTTSAudioWithFallback(ai, profile.sampleText, profile.geminiVoice);
 
-      const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (data) {
-        const pcmBuffer = Buffer.from(data, 'base64');
+      if (pcmBuffer && pcmBuffer.length > 0) {
         const sampleRate = 24000;
-        const wavHeader = createWavHeader(pcmBuffer.length, sampleRate, 1, 16);
-        const fullWavBuffer = Buffer.concat([wavHeader, pcmBuffer]);
+        const mp3Buffer = convertPcmToMp3(pcmBuffer, sampleRate, 128);
         const durationSeconds = pcmBuffer.length / (sampleRate * 2);
-        const base64Wav = fullWavBuffer.toString('base64');
+        const base64Mp3 = mp3Buffer.toString('base64');
 
         const result = {
-          audioUrl: `data:audio/wav;base64,${base64Wav}`,
-          audioBase64: base64Wav,
+          audioUrl: `data:audio/mp3;base64,${base64Mp3}`,
+          audioBase64: base64Mp3,
           duration: durationSeconds,
           voiceId: profile.id,
           voiceName: profile.name,
+          isClientFallback: false,
         };
 
         sampleAudioCache.set(profile.id, result);
         return res.json(result);
       }
+
+      // If Gemini TTS is busy or rate limited, return clean client fallback response
+      return res.json({
+        isClientFallback: true,
+        voiceId: profile.id,
+        voiceName: profile.name,
+        sampleText: profile.sampleText,
+        accent: profile.accent,
+        gender: profile.gender,
+      });
     } catch (err: any) {
       console.warn('Sample preview generation failed via Gemini:', err?.message || err);
+      const voiceId = sanitizeInputString(req.body?.voiceId, 50);
+      const profile = resolveNarratorProfile(voiceId);
+      return res.json({
+        isClientFallback: true,
+        voiceId: profile.id,
+        voiceName: profile.name,
+        sampleText: profile.sampleText,
+        accent: profile.accent,
+        gender: profile.gender,
+      });
     }
-    return res.status(500).json({ error: 'Failed to generate voice preview' });
   });
 
   // Extract chapters from PDF or raw extracted text
@@ -553,28 +657,12 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
           if (!trimmedChunk) return null;
 
           for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-              const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-tts-preview',
-                contents: [{ parts: [{ text: trimmedChunk }] }],
-                config: {
-                  responseModalities: [Modality.AUDIO],
-                  speechConfig: {
-                    voiceConfig: {
-                      prebuiltVoiceConfig: { voiceName: selectedVoice },
-                    },
-                  },
-                },
-              });
-
-              const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-              if (data) {
-                return Buffer.from(data, 'base64');
-              }
-            } catch (err: any) {
-              if (attempt === 1) {
-                await sleep(350);
-              }
+            const pcm = await generateTTSAudioWithFallback(ai, trimmedChunk, selectedVoice);
+            if (pcm && pcm.length > 0) {
+              return pcm;
+            }
+            if (attempt === 1) {
+              await sleep(300);
             }
           }
           return null;
@@ -594,18 +682,17 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
         }
       }
 
-      // If all chunks were synthesized via Gemini TTS, create the WAV audio container
+      // If all chunks were synthesized via Gemini TTS, create the MP3 audio container
       if (allChunksSucceeded && pcmBuffers.length === chunks.length && pcmBuffers.length > 0) {
         const combinedPcm = Buffer.concat(pcmBuffers);
         const sampleRate = 24000;
-        const wavHeader = createWavHeader(combinedPcm.length, sampleRate, 1, 16);
-        const fullWavBuffer = Buffer.concat([wavHeader, combinedPcm]);
+        const mp3Buffer = convertPcmToMp3(combinedPcm, sampleRate, 128);
         const durationSeconds = combinedPcm.length / (sampleRate * 2);
-        const base64Wav = fullWavBuffer.toString('base64');
+        const base64Mp3 = mp3Buffer.toString('base64');
 
         return res.json({
-          audioUrl: `data:audio/wav;base64,${base64Wav}`,
-          audioBase64: base64Wav,
+          audioUrl: `data:audio/mp3;base64,${base64Mp3}`,
+          audioBase64: base64Mp3,
           duration: durationSeconds,
           sampleRate,
           voiceUsed: profile.name,

@@ -1,6 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Chapter, Accent, VoiceGender, AppTheme } from '../types';
-import { playLiveBrowserSpeech, stopLiveBrowserSpeech, seekLiveBrowserSpeech } from '../utils/browserTTS';
+import {
+  playLiveBrowserSpeech,
+  stopLiveBrowserSpeech,
+  seekLiveBrowserSpeech,
+  setLiveBrowserSpeechVolume,
+} from '../utils/browserTTS';
 import {
   Play,
   Pause,
@@ -185,11 +190,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     return () => clearInterval(timer);
   }, [isPlaying, currentChapter?.isClientFallback, duration, playbackRate]);
 
-  // Sync volume
+  // Sync volume and mute state immediately across both HTML5 Audio and SpeechSynthesis
   useEffect(() => {
     if (audioRef.current) {
+      audioRef.current.muted = isMuted;
       audioRef.current.volume = isMuted ? 0 : volume;
     }
+    setLiveBrowserSpeechVolume(isMuted ? 0 : volume);
   }, [volume, isMuted]);
 
   // Sync speed
@@ -267,12 +274,28 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   };
 
+  const handleToggleMute = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    if (audioRef.current) {
+      audioRef.current.muted = nextMuted;
+      audioRef.current.volume = nextMuted ? 0 : volume;
+    }
+    setLiveBrowserSpeechVolume(nextMuted ? 0 : volume);
+  };
+
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setVolume(val);
+    const nextMuted = val === 0;
     if (val > 0 && isMuted) {
       setIsMuted(false);
     }
+    if (audioRef.current) {
+      audioRef.current.muted = nextMuted;
+      audioRef.current.volume = val;
+    }
+    setLiveBrowserSpeechVolume(nextMuted ? 0 : val);
   };
 
   const formatTime = (timeInSeconds: number) => {
@@ -629,7 +652,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               <button
                 id="player-mute-btn"
                 type="button"
-                onClick={() => setIsMuted(!isMuted)}
+                onClick={handleToggleMute}
                 className={`transition-colors ${
                   isRainbow ? 'text-purple-700 hover:text-purple-950' : 'text-stone-400 hover:text-white'
                 }`}
