@@ -282,8 +282,11 @@ export default function App() {
 
       let audioUrl = '';
       let audioBase64 = '';
+      let audioMimeType: string | undefined;
+      let audioFileExtension: 'mp3' | 'wav' | undefined;
       let duration = 0;
       let isClientFallback = false;
+      let isDownloadable = false;
       let voiceUsed = activeVoice.name;
 
       if (res.ok) {
@@ -291,9 +294,12 @@ export default function App() {
         if (data.audioUrl) {
           audioUrl = data.audioUrl;
           audioBase64 = data.audioBase64 || '';
+          audioMimeType = data.audioMimeType;
+          audioFileExtension = data.audioFileExtension;
           duration = data.duration || targetChapter.estimatedMinutes * 60;
           voiceUsed = data.voiceUsed || activeVoice.name;
           isClientFallback = !!data.isClientFallback;
+          isDownloadable = !isClientFallback && Boolean(audioBase64);
         } else if (data.isClientFallback) {
           const fallbackAudio = await generateClientSpeechAudio(
             targetChapter.text,
@@ -306,12 +312,14 @@ export default function App() {
           duration = data.duration || fallbackAudio.duration;
           voiceUsed = data.voiceUsed || activeVoice.name;
           isClientFallback = true;
+          isDownloadable = false;
         } else {
           audioUrl = data.audioUrl || '';
           audioBase64 = data.audioBase64 || '';
           duration = data.duration || targetChapter.estimatedMinutes * 60;
           voiceUsed = data.voiceUsed || activeVoice.name;
           isClientFallback = false;
+          isDownloadable = Boolean(audioBase64);
         }
       } else {
         // If server hits quota limits or is unavailable, use client speech synthesizer fallback
@@ -326,6 +334,7 @@ export default function App() {
         audioBase64 = fallbackAudio.audioBase64;
         duration = fallbackAudio.duration;
         isClientFallback = true;
+        isDownloadable = false;
       }
 
       setChapters((prev) =>
@@ -336,8 +345,11 @@ export default function App() {
                 status: 'ready',
                 audioUrl,
                 audioBase64,
+                audioMimeType,
+                audioFileExtension,
                 audioDuration: duration,
                 isClientFallback,
+                isDownloadable,
                 voiceUsed,
                 accentUsed: accent,
                 genderUsed: gender,
@@ -358,9 +370,12 @@ export default function App() {
         voiceName: voiceUsed || activeVoice.name,
         audioUrl,
         audioBase64,
+        audioMimeType,
+        audioFileExtension,
         audioDuration: duration || targetChapter.estimatedMinutes * 60,
         createdAt: Date.now(),
         isClientFallback,
+        isDownloadable,
       };
 
       setStoredAudioFiles((prev) => [newGeneratedItem, ...prev]);
@@ -395,9 +410,12 @@ export default function App() {
                   ...c,
                   status: 'ready',
                   audioUrl: fallbackAudio.audioUrl,
-                  audioBase64: fallbackAudio.audioBase64,
-                  audioDuration: fallbackAudio.duration,
-                  isClientFallback: true,
+                audioBase64: fallbackAudio.audioBase64,
+                audioMimeType: 'audio/mpeg',
+                audioFileExtension: 'mp3',
+                audioDuration: fallbackAudio.duration,
+                isClientFallback: true,
+                isDownloadable: false,
                   accentUsed: accent,
                   genderUsed: gender,
                 }
@@ -417,9 +435,12 @@ export default function App() {
           voiceName: activeVoice.name,
           audioUrl: fallbackAudio.audioUrl,
           audioBase64: fallbackAudio.audioBase64,
+          audioMimeType: 'audio/mpeg',
+          audioFileExtension: 'mp3',
           audioDuration: fallbackAudio.duration,
           createdAt: Date.now(),
           isClientFallback: true,
+          isDownloadable: false,
         };
         setStoredAudioFiles((prev) => [newFallbackItem, ...prev]);
 
@@ -600,8 +621,11 @@ export default function App() {
                 status: 'ready',
                 audioUrl: latest.audioUrl,
                 audioBase64: latest.audioBase64,
+                audioMimeType: latest.audioMimeType,
+                audioFileExtension: latest.audioFileExtension,
                 audioDuration: latest.audioDuration,
                 isClientFallback: latest.isClientFallback,
+                isDownloadable: latest.isDownloadable,
                 voiceUsed: latest.voiceName,
                 accentUsed: latest.accent,
                 genderUsed: latest.gender,
@@ -614,8 +638,11 @@ export default function App() {
                 status: 'idle',
                 audioUrl: undefined,
                 audioBase64: undefined,
+                audioMimeType: undefined,
+                audioFileExtension: undefined,
                 audioDuration: undefined,
                 isClientFallback: undefined,
+                isDownloadable: undefined,
                 voiceUsed: undefined,
                 accentUsed: undefined,
                 genderUsed: undefined,
@@ -642,8 +669,11 @@ export default function App() {
         status: 'idle',
         audioUrl: undefined,
         audioBase64: undefined,
+        audioMimeType: undefined,
+        audioFileExtension: undefined,
         audioDuration: undefined,
         isClientFallback: undefined,
+        isDownloadable: undefined,
         voiceUsed: undefined,
         accentUsed: undefined,
         genderUsed: undefined,
@@ -672,8 +702,11 @@ export default function App() {
       status: 'ready',
       audioUrl: file.audioUrl,
       audioBase64: file.audioBase64,
+      audioMimeType: file.audioMimeType,
+      audioFileExtension: file.audioFileExtension,
       audioDuration: file.audioDuration,
       isClientFallback: file.isClientFallback,
+      isDownloadable: file.isDownloadable,
       voiceUsed: file.voiceName,
       accentUsed: file.accent,
       genderUsed: file.gender,
@@ -875,7 +908,9 @@ export default function App() {
           setCustomPlayingTrack(null);
         }}
         onDownloadCurrent={
-          currentPlayingChapter ? () => handleDownloadSingle(currentPlayingChapter) : undefined
+          currentPlayingChapter && currentPlayingChapter.isDownloadable !== false
+            ? () => handleDownloadSingle(currentPlayingChapter)
+            : undefined
         }
       />
 

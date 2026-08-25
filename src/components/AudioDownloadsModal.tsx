@@ -64,11 +64,13 @@ export const AudioDownloadsModal: React.FC<AudioDownloadsModalProps> = ({
     return matchesSearch && matchesAccent && matchesGender;
   });
 
+  const downloadableFiles = filteredFiles.filter((file) => file.isDownloadable !== false);
+
   const handleDownloadAll = async () => {
-    if (filteredFiles.length === 0) return;
+    if (downloadableFiles.length === 0) return;
     setZipProgress(0);
     try {
-      await downloadStoredAudiosAsZip(filteredFiles, bookTitle, (pct) => setZipProgress(pct));
+      await downloadStoredAudiosAsZip(downloadableFiles, bookTitle, (pct) => setZipProgress(pct));
     } catch (err) {
       console.error('Failed to create ZIP:', err);
     } finally {
@@ -155,14 +157,14 @@ export const AudioDownloadsModal: React.FC<AudioDownloadsModalProps> = ({
                     id="download-all-stored-zip-btn"
                     type="button"
                     onClick={handleDownloadAll}
-                    disabled={filteredFiles.length === 0}
+                    disabled={downloadableFiles.length === 0}
                     className="flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-stone-800 disabled:opacity-50 transition-all"
                   >
                     <Download className="h-3.5 w-3.5 text-stone-200" />
                     <span>
                       {zipProgress !== null
                         ? `Zipping ${zipProgress}%`
-                        : `Download All ZIP (${filteredFiles.length})`}
+                        : `Download All ZIP (${downloadableFiles.length})`}
                     </span>
                   </button>
 
@@ -377,7 +379,7 @@ export const AudioDownloadsModal: React.FC<AudioDownloadsModalProps> = ({
                   {/* Right Actions */}
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     {/* Download Single File */}
-                    <button
+                    {file.isDownloadable !== false && <button
                       type="button"
                       onClick={() => downloadGeneratedAudioFile(file)}
                       className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-800 hover:bg-stone-100 hover:border-stone-300 transition-colors shadow-2xs"
@@ -385,7 +387,7 @@ export const AudioDownloadsModal: React.FC<AudioDownloadsModalProps> = ({
                     >
                       <Download className="h-3.5 w-3.5 text-stone-600" />
                       <span>Download</span>
-                    </button>
+                    </button>}
 
                     {/* Delete Specific Audio File */}
                     <button

@@ -288,9 +288,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const val = parseFloat(e.target.value);
     setVolume(val);
     const nextMuted = val === 0;
-    if (val > 0 && isMuted) {
-      setIsMuted(false);
-    }
+    setIsMuted(nextMuted);
     if (audioRef.current) {
       audioRef.current.muted = nextMuted;
       audioRef.current.volume = val;

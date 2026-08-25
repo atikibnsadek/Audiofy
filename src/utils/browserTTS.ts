@@ -546,14 +546,22 @@ let activeProgressCallback: ((index: number, total: number) => void) | null = nu
 let currentActiveUtterance: SpeechSynthesisUtterance | null = null;
 let liveSpeechEndHandler: (() => void) | null = null;
 let activeSpeechVolume = 0.85;
+let restartCurrentUtterance: (() => void) | null = null;
 
 /**
  * Dynamically adjust volume for active and queued live browser speech (0.0 to 1.0)
  */
 export function setLiveBrowserSpeechVolume(vol: number): void {
-  activeSpeechVolume = Math.max(0, Math.min(1, vol));
+  const nextVolume = Math.max(0, Math.min(1, vol));
+  const changed = nextVolume !== activeSpeechVolume;
+  activeSpeechVolume = nextVolume;
   if (currentActiveUtterance) {
     currentActiveUtterance.volume = activeSpeechVolume;
+  }
+  // Browser engines generally apply SpeechSynthesisUtterance.volume only when
+  // an utterance starts. Restart the current sentence so the new level takes effect.
+  if (changed && isQueueRunning && restartCurrentUtterance) {
+    restartCurrentUtterance();
   }
 }
 
@@ -691,6 +699,15 @@ export function playLiveBrowserSpeech(
     window.speechSynthesis.speak(utterance);
   }
 
+  restartCurrentUtterance = () => {
+    if (!isQueueRunning || !currentActiveUtterance) return;
+    currentActiveUtterance.onend = null;
+    currentActiveUtterance.onerror = null;
+    window.speechSynthesis.cancel();
+    currentActiveUtterance = null;
+    speakNext();
+  };
+
   speakNext();
 }
 
@@ -720,6 +737,7 @@ export function stopLiveBrowserSpeech() {
   activeSentenceQueue = [];
   currentQueueIndex = 0;
   activeProgressCallback = null;
+  restartCurrentUtterance = null;
 
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
