@@ -286,7 +286,7 @@ export default function App() {
       let audioFileExtension: 'mp3' | 'wav' | undefined;
       let duration = 0;
       let isClientFallback = false;
-      let isDownloadable = false;
+      let isDownloadable = true;
       let voiceUsed = activeVoice.name;
 
       if (res.ok) {
@@ -294,12 +294,12 @@ export default function App() {
         if (data.audioUrl) {
           audioUrl = data.audioUrl;
           audioBase64 = data.audioBase64 || '';
-          audioMimeType = data.audioMimeType;
-          audioFileExtension = data.audioFileExtension;
+          audioMimeType = data.audioMimeType || 'audio/wav';
+          audioFileExtension = data.audioFileExtension || 'wav';
           duration = data.duration || targetChapter.estimatedMinutes * 60;
           voiceUsed = data.voiceUsed || activeVoice.name;
           isClientFallback = !!data.isClientFallback;
-          isDownloadable = !isClientFallback && Boolean(audioBase64);
+          isDownloadable = true;
         } else if (data.isClientFallback) {
           const fallbackAudio = await generateClientSpeechAudio(
             targetChapter.text,
@@ -309,17 +309,21 @@ export default function App() {
           );
           audioUrl = fallbackAudio.audioUrl;
           audioBase64 = fallbackAudio.audioBase64;
+          audioMimeType = 'audio/mp3';
+          audioFileExtension = 'mp3';
           duration = data.duration || fallbackAudio.duration;
           voiceUsed = data.voiceUsed || activeVoice.name;
           isClientFallback = true;
-          isDownloadable = false;
+          isDownloadable = true;
         } else {
           audioUrl = data.audioUrl || '';
           audioBase64 = data.audioBase64 || '';
+          audioMimeType = data.audioMimeType || 'audio/wav';
+          audioFileExtension = data.audioFileExtension || 'wav';
           duration = data.duration || targetChapter.estimatedMinutes * 60;
           voiceUsed = data.voiceUsed || activeVoice.name;
           isClientFallback = false;
-          isDownloadable = Boolean(audioBase64);
+          isDownloadable = true;
         }
       } else {
         // If server hits quota limits or is unavailable, use client speech synthesizer fallback
@@ -332,9 +336,11 @@ export default function App() {
         );
         audioUrl = fallbackAudio.audioUrl;
         audioBase64 = fallbackAudio.audioBase64;
+        audioMimeType = 'audio/mp3';
+        audioFileExtension = 'mp3';
         duration = fallbackAudio.duration;
         isClientFallback = true;
-        isDownloadable = false;
+        isDownloadable = true;
       }
 
       setChapters((prev) =>
@@ -415,7 +421,7 @@ export default function App() {
                 audioFileExtension: 'mp3',
                 audioDuration: fallbackAudio.duration,
                 isClientFallback: true,
-                isDownloadable: false,
+                isDownloadable: true,
                   accentUsed: accent,
                   genderUsed: gender,
                 }
@@ -435,12 +441,12 @@ export default function App() {
           voiceName: activeVoice.name,
           audioUrl: fallbackAudio.audioUrl,
           audioBase64: fallbackAudio.audioBase64,
-          audioMimeType: 'audio/mpeg',
+          audioMimeType: 'audio/mp3',
           audioFileExtension: 'mp3',
           audioDuration: fallbackAudio.duration,
           createdAt: Date.now(),
           isClientFallback: true,
-          isDownloadable: false,
+          isDownloadable: true,
         };
         setStoredAudioFiles((prev) => [newFallbackItem, ...prev]);
 

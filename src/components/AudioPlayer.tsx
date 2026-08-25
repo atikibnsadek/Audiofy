@@ -86,22 +86,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         Math.max(5, Math.round(((currentChapter.wordCount || 100) / 140) * 60));
       setDuration(estDuration);
 
-      if (audioRef.current) {
-        if (currentChapter.isClientFallback) {
-          // In fallback mode, do not play from audio element (speech synthesis will narrate)
-          audioRef.current.removeAttribute('src');
-          audioRef.current.load();
-        } else if (currentChapter.audioUrl) {
-          audioRef.current.src = currentChapter.audioUrl;
-          audioRef.current.playbackRate = playbackRate;
-          audioRef.current.volume = isMuted ? 0 : volume;
-          audioRef.current.load();
-        }
+      if (audioRef.current && currentChapter.audioUrl) {
+        audioRef.current.src = currentChapter.audioUrl;
+        audioRef.current.playbackRate = playbackRate;
+        audioRef.current.volume = isMuted ? 0 : volume;
+        audioRef.current.load();
       }
     }
-  }, [currentChapter?.id, currentChapter?.audioUrl, currentChapter?.isClientFallback]);
+  }, [currentChapter?.id, currentChapter?.audioUrl]);
 
-  // Sync play/pause state & speech synthesis
+  // Sync play/pause state & audio playback
   useEffect(() => {
     if (!currentChapter) {
       stopLiveBrowserSpeech();
@@ -115,14 +109,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const effectiveGender = currentChapter.genderUsed || gender;
 
     if (isPlaying) {
-      if (currentChapter.isClientFallback) {
-        // Stop audio element completely
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-        }
-        // Use browser speech synthesis only
-        stopLiveBrowserSpeech();
+      stopLiveBrowserSpeech();
+      if (audioRef.current && currentChapter.audioUrl) {
+        audioRef.current.play().catch((err) => console.warn('Play error:', err));
+      } else if (!currentChapter.audioUrl) {
+        // Fallback to live speech synthesis only if no generated audio file exists
         playLiveBrowserSpeech(
           currentChapter.text,
           effectiveAccent,
@@ -131,12 +122,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           () => handleEnded(),
           currentChapter.voiceUsed
         );
-      } else {
-        // Real audio track: stop any browser speech synthesis completely
-        stopLiveBrowserSpeech();
-        if (audioRef.current && currentChapter.audioUrl) {
-          audioRef.current.play().catch((err) => console.warn('Play error:', err));
-        }
       }
     } else {
       stopLiveBrowserSpeech();
@@ -216,7 +201,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current && !currentChapter?.isClientFallback) {
+    if (audioRef.current && currentChapter?.audioUrl) {
       setDuration(audioRef.current.duration || currentChapter?.audioDuration || 0);
     }
   };
@@ -224,21 +209,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
     setCurrentTime(newTime);
-    if (audioRef.current && !currentChapter?.isClientFallback) {
+    if (audioRef.current && currentChapter?.audioUrl) {
       audioRef.current.currentTime = newTime;
-    } else if (currentChapter?.isClientFallback && isPlaying) {
-      const effectiveDuration = duration || currentChapter.audioDuration || 60;
+    } else if (!currentChapter?.audioUrl && isPlaying) {
+      const effectiveDuration = duration || currentChapter?.audioDuration || 60;
       const ratio = newTime / effectiveDuration;
-      const effectiveAccent = currentChapter.accentUsed || accent;
-      const effectiveGender = currentChapter.genderUsed || gender;
+      const effectiveAccent = currentChapter?.accentUsed || accent;
+      const effectiveGender = currentChapter?.genderUsed || gender;
       seekLiveBrowserSpeech(
         ratio,
-        currentChapter.text,
+        currentChapter?.text || '',
         effectiveAccent,
         effectiveGender,
         playbackRate,
         () => handleEnded(),
-        currentChapter.voiceUsed
+        currentChapter?.voiceUsed
       );
     }
   };
@@ -247,20 +232,20 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const effectiveDuration = duration || currentChapter?.audioDuration || 60;
     const newTime = Math.max(0, Math.min(currentTime + seconds, effectiveDuration));
     setCurrentTime(newTime);
-    if (audioRef.current && !currentChapter?.isClientFallback) {
+    if (audioRef.current && currentChapter?.audioUrl) {
       audioRef.current.currentTime = newTime;
-    } else if (currentChapter?.isClientFallback && isPlaying) {
+    } else if (!currentChapter?.audioUrl && isPlaying) {
       const ratio = newTime / effectiveDuration;
-      const effectiveAccent = currentChapter.accentUsed || accent;
-      const effectiveGender = currentChapter.genderUsed || gender;
+      const effectiveAccent = currentChapter?.accentUsed || accent;
+      const effectiveGender = currentChapter?.genderUsed || gender;
       seekLiveBrowserSpeech(
         ratio,
-        currentChapter.text,
+        currentChapter?.text || '',
         effectiveAccent,
         effectiveGender,
         playbackRate,
         () => handleEnded(),
-        currentChapter.voiceUsed
+        currentChapter?.voiceUsed
       );
     }
   };

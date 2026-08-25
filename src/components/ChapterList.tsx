@@ -416,23 +416,23 @@ export const ChapterList: React.FC<ChapterListProps> = ({
                         <span className="hidden sm:inline">Regenerate</span>
                       </button>
 
-                      {/* Download Single Chapter */}
-                      {chapter.isDownloadable !== false && (
+                      {/* Save / Download Single Chapter */}
+                      {(chapter.audioUrl || chapter.audioBase64) && (
                         <button
                           id={`download-chapter-${chapter.chapterNumber}`}
                           type="button"
                           onClick={() => onDownloadSingle(chapter)}
-                          title="Download Chapter Audio"
-                          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          title="Save Chapter Audio"
+                          className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all shadow-2xs ${
                             isDark
-                              ? 'border-stone-700 bg-stone-800 text-stone-300 hover:bg-stone-700 hover:text-stone-100'
+                              ? 'border-emerald-800/60 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60'
                               : isRainbow
-                              ? 'border-purple-200 bg-white text-purple-900 hover:bg-purple-50'
-                              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100 hover:text-stone-900'
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 font-semibold'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                           }`}
                         >
-                          <Download className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">Save</span>
+                          <Download className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>Save</span>
                         </button>
                       )}
                     </>

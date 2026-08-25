@@ -301,11 +301,63 @@ function normalizeGeminiVoice(voiceName: string): string {
   return 'puck';
 }
 
+function extractPcmFromWav(wavBuffer: Buffer): { pcm: Buffer; sampleRate: number; numChannels: number; bitsPerSample: number } {
+  let sampleRate = 24000;
+  let numChannels = 1;
+  let bitsPerSample = 16;
+
+  if (wavBuffer.length >= 44 && wavBuffer.toString('ascii', 0, 4) === 'RIFF' && wavBuffer.toString('ascii', 8, 12) === 'WAVE') {
+    sampleRate = wavBuffer.readUInt32LE(24);
+    numChannels = wavBuffer.readUInt16LE(22);
+    bitsPerSample = wavBuffer.readUInt16LE(34);
+    console.log(`[GEMINI TTS FORMAT] Detected standard RIFF WAV header from API: sampleRate=${sampleRate}Hz, channels=${numChannels}, bitsPerSample=${bitsPerSample}`);
+  } else {
+    console.log(`[GEMINI TTS FORMAT] No RIFF WAV header detected, assuming raw PCM 24000Hz mono 16-bit`);
+  }
+
+  if (wavBuffer.length < 44) {
+    return { pcm: wavBuffer, sampleRate, numChannels, bitsPerSample };
+  }
+
+  // Verify if it has a standard RIFF/WAVE header.
+  if (wavBuffer.toString('ascii', 0, 4) !== 'RIFF' || wavBuffer.toString('ascii', 8, 12) !== 'WAVE') {
+    // If not a RIFF file, it might already be raw PCM
+    return { pcm: wavBuffer, sampleRate, numChannels, bitsPerSample };
+  }
+
+  // Find the 'data' sub-chunk to extract raw PCM data
+  let offset = 12;
+  while (offset < wavBuffer.length - 8) {
+    const chunkId = wavBuffer.toString('ascii', offset, offset + 4);
+    const chunkSize = wavBuffer.readUInt32LE(offset + 4);
+    if (chunkId === 'data') {
+      const dataStart = offset + 8;
+      const dataEnd = Math.min(dataStart + chunkSize, wavBuffer.length);
+      return { pcm: wavBuffer.subarray(dataStart, dataEnd), sampleRate, numChannels, bitsPerSample };
+    }
+    // Prevent infinite loop if chunkSize is invalid or 0
+    if (chunkSize <= 0) break;
+    offset += 8 + chunkSize;
+  }
+
+  // Simple substring/index search fallback if parsing chunk offsets failed
+  const dataOffset = wavBuffer.indexOf(Buffer.from('data'));
+  if (dataOffset !== -1 && dataOffset < wavBuffer.length - 8) {
+    const chunkSize = wavBuffer.readUInt32LE(dataOffset + 4);
+    const dataStart = dataOffset + 8;
+    const dataEnd = Math.min(dataStart + chunkSize, wavBuffer.length);
+    return { pcm: wavBuffer.subarray(dataStart, dataEnd), sampleRate, numChannels, bitsPerSample };
+  }
+
+  // Heuristic strip of standard 44-byte header
+  return { pcm: wavBuffer.subarray(44), sampleRate, numChannels, bitsPerSample };
+}
+
 async function generateTTSAudioWithFallback(
   ai: GoogleGenAI,
   text: string,
   voiceName: string
-): Promise<Buffer | null> {
+): Promise<{ pcm: Buffer; sampleRate: number; numChannels: number; bitsPerSample: number } | null> {
   const normalizedVoice = normalizeGeminiVoice(voiceName);
   const TTS_MODELS = [
     'gemini-3.1-flash-tts-preview',
@@ -326,7 +378,8 @@ async function generateTTSAudioWithFallback(
       });
       const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (data) {
-        return Buffer.from(data, 'base64');
+        const fullBuffer = Buffer.from(data, 'base64');
+        return extractPcmFromWav(fullBuffer);
       }
     } catch (err: any) {
       const isQuotaError = err?.status === 'RESOURCE_EXHAUSTED' || err?.message?.includes('quota') || err?.message?.includes('429');
@@ -391,12 +444,12 @@ async function startServer() {
       }
 
       const ai = getGeminiClient();
-      const pcmBuffer = await generateTTSAudioWithFallback(ai, profile.sampleText, profile.geminiVoice);
+      const ttsResult = await generateTTSAudioWithFallback(ai, profile.sampleText, profile.geminiVoice);
 
-      if (pcmBuffer && pcmBuffer.length > 0) {
-        const sampleRate = 24000;
-        const wavBuffer = Buffer.concat([createWavHeader(pcmBuffer.length, sampleRate), pcmBuffer]);
-        const durationSeconds = pcmBuffer.length / (sampleRate * 2);
+      if (ttsResult && ttsResult.pcm.length > 0) {
+        const { pcm, sampleRate, numChannels, bitsPerSample } = ttsResult;
+        const wavBuffer = Buffer.concat([createWavHeader(pcm.length, sampleRate, numChannels, bitsPerSample), pcm]);
+        const durationSeconds = pcm.length / (sampleRate * numChannels * (bitsPerSample / 8));
         const base64Wav = wavBuffer.toString('base64');
 
         const result = {
@@ -617,6 +670,9 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
       }
 
       const pcmBuffers: Buffer[] = [];
+      let detectedSampleRate = 24000;
+      let detectedChannels = 1;
+      let detectedBitsPerSample = 16;
       let allChunksSucceeded = true;
 
       // Synthesize chunks in batches of 2 with concurrency for speed
@@ -628,9 +684,9 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
           if (!trimmedChunk) return null;
 
           for (let attempt = 1; attempt <= 2; attempt++) {
-            const pcm = await generateTTSAudioWithFallback(ai, trimmedChunk, selectedVoice);
-            if (pcm && pcm.length > 0) {
-              return pcm;
+            const result = await generateTTSAudioWithFallback(ai, trimmedChunk, selectedVoice);
+            if (result && result.pcm.length > 0) {
+              return result;
             }
             if (attempt === 1) {
               await sleep(300);
@@ -641,8 +697,11 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
 
         const batchResults = await Promise.all(batchPromises);
         for (const result of batchResults) {
-          if (result && result.length > 0) {
-            pcmBuffers.push(result);
+          if (result && result.pcm.length > 0) {
+            pcmBuffers.push(result.pcm);
+            detectedSampleRate = result.sampleRate;
+            detectedChannels = result.numChannels;
+            detectedBitsPerSample = result.bitsPerSample;
           } else {
             allChunksSucceeded = false;
           }
@@ -653,13 +712,14 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
         }
       }
 
-      // Gemini returns raw 24 kHz, 16-bit, mono PCM. Wrap it directly in WAV; do
-      // not label an encoder fallback as MP3, which produces corrupt downloads.
+      // Gemini returns raw PCM formatted inside WAV. Wrap the combined PCM directly in WAV with correct parameters.
       if (allChunksSucceeded && pcmBuffers.length === chunks.length && pcmBuffers.length > 0) {
         const combinedPcm = Buffer.concat(pcmBuffers);
-        const sampleRate = 24000;
-        const wavBuffer = Buffer.concat([createWavHeader(combinedPcm.length, sampleRate), combinedPcm]);
-        const durationSeconds = combinedPcm.length / (sampleRate * 2);
+        const wavBuffer = Buffer.concat([
+          createWavHeader(combinedPcm.length, detectedSampleRate, detectedChannels, detectedBitsPerSample),
+          combinedPcm
+        ]);
+        const durationSeconds = combinedPcm.length / (detectedSampleRate * detectedChannels * (detectedBitsPerSample / 8));
         const base64Wav = wavBuffer.toString('base64');
 
         return res.json({
@@ -668,7 +728,7 @@ If the document does not have explicit chapter markers, split it into 2 to 6 coh
           audioMimeType: 'audio/wav',
           audioFileExtension: 'wav',
           duration: durationSeconds,
-          sampleRate,
+          sampleRate: detectedSampleRate,
           voiceUsed: profile.name,
           voiceId: profile.id,
           isClientFallback: false,
