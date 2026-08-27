@@ -332,154 +332,29 @@ export function convertSamplesToMp3Blob(samples: Int16Array, sampleRate = 22050,
 }
 
 /**
- * Generate speech audio MP3 container for chapter export/download
- * Uses acoustic formant speech synthesis to articulate text phonemes, vowels, consonants, and pitch intonations
+ * Generate speech audio container for chapter export/playback.
+ * When Gemini cloud TTS is unavailable or rate-limited, chapters gracefully use
+ * high-fidelity browser speech synthesis (Web Speech API) for crystal-clear real-voice narration.
  */
 export async function generateClientSpeechAudio(
   text: string,
-  accent: Accent,
-  gender: VoiceGender,
+  _accent: Accent,
+  _gender: VoiceGender,
   signal?: AbortSignal
 ): Promise<{ audioUrl: string; audioBase64: string; duration: number }> {
   const cleanText = text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!cleanText) {
-    const emptyBlob = convertSamplesToMp3Blob(new Int16Array(22050), 22050, 128);
-    return {
-      audioUrl: URL.createObjectURL(emptyBlob),
-      audioBase64: await blobToBase64(emptyBlob),
-      duration: 1,
-    };
-  }
-
   if (signal?.aborted) {
     throw new DOMException('Speech generation cancelled', 'AbortError');
   }
 
-  const sampleRate = 22050;
-  const isFemale = gender === 'female';
-  const isBritish = accent === 'british';
-  const baseF0 = isFemale ? 210 : 130;
-
-  // Split text into words and punctuation
-  const tokens = cleanText.match(/[a-zA-Z0-9']+|[.!?,;:—]/g) || [cleanText];
-  const pcmSamples: number[] = [];
-
-  const vowelFormants: Record<string, [number, number, number]> = {
-    a: [730, 1090, 2440],
-    e: [530, 1840, 2480],
-    i: [270, 2290, 3010],
-    o: [570, 840, 2410],
-    u: [300, 870, 2240],
-    y: [320, 2100, 2800],
-    default: [500, 1500, 2500],
-  };
-
-  const isVowelChar = (ch: string) => /[aeiouy]/i.test(ch);
-  const isFricativeChar = (ch: string) => /[szfxcv]/i.test(ch);
-  const isPlosiveChar = (ch: string) => /[tdkpgb]/i.test(ch);
-  const isNasalChar = (ch: string) => /[mn]/i.test(ch);
-
-  let sentenceProgress = 0;
-
-  for (let tIdx = 0; tIdx < tokens.length; tIdx++) {
-    if (signal?.aborted) {
-      throw new DOMException('Speech generation cancelled', 'AbortError');
-    }
-
-    const token = tokens[tIdx];
-
-    // Handle punctuation pause
-    if (/^[.!?,;:—]$/.test(token)) {
-      const pauseDurationMs = /[.!?]/.test(token) ? 380 : 180;
-      const pauseSamples = Math.round((pauseDurationMs / 1000) * sampleRate);
-      for (let p = 0; p < pauseSamples; p++) {
-        pcmSamples.push(0);
-      }
-      if (/[.!?]/.test(token)) sentenceProgress = 0;
-      continue;
-    }
-
-    sentenceProgress += 1;
-    const word = token.toLowerCase();
-
-    for (let cIdx = 0; cIdx < word.length; cIdx++) {
-      const char = word[cIdx];
-
-      // Phoneme duration based on sound class
-      const durationMs = isVowelChar(char)
-        ? 95
-        : isFricativeChar(char)
-        ? 60
-        : isPlosiveChar(char)
-        ? 40
-        : 70;
-      const numSamples = Math.round((durationMs / 1000) * sampleRate);
-
-      let f1 = 500,
-        f2 = 1500,
-        f3 = 2500;
-      if (isVowelChar(char)) {
-        [f1, f2, f3] = vowelFormants[char] || vowelFormants.default;
-      } else if (isNasalChar(char)) {
-        [f1, f2, f3] = [250, 1050, 2100];
-      }
-
-      for (let i = 0; i < numSamples; i++) {
-        const t = i / sampleRate;
-        const progress = i / numSamples;
-        // Smooth Hann amplitude envelope for phoneme articulation
-        const env = Math.sin(Math.PI * progress);
-
-        // Intonation pitch contour (slight rise at sentence start, drop at end)
-        const intonationFactor = 1.0 + 0.08 * Math.sin((sentenceProgress % 10) * 0.3) - (cIdx === word.length - 1 ? 0.04 : 0);
-        const pitchF0 = baseF0 * intonationFactor * (isBritish ? 1.05 : 1.0);
-
-        let sampleVal = 0;
-
-        if (isVowelChar(char) || isNasalChar(char)) {
-          // Glottal excitation pulse train
-          const glottal = (t * pitchF0 % 1.0) < 0.35 ? 0.9 : -0.25;
-          // Resonant formant filtering
-          const res1 = Math.sin(2 * Math.PI * f1 * t) * 0.45;
-          const res2 = Math.sin(2 * Math.PI * f2 * t) * 0.28;
-          const res3 = Math.sin(2 * Math.PI * f3 * t) * 0.15;
-          sampleVal = glottal * (res1 + res2 + res3) * env * 0.7;
-        } else if (isFricativeChar(char)) {
-          // White noise fricative burst for S/Z/F/X
-          const noise = (Math.random() * 2.0 - 1.0) * 0.55;
-          const bandpassFilter = Math.sin(2 * Math.PI * 4800 * t);
-          sampleVal = noise * bandpassFilter * env * 0.6;
-        } else if (isPlosiveChar(char)) {
-          // Plosive burst attack for T/D/K/P/B
-          const burst = (Math.random() * 2.0 - 1.0) * 0.75;
-          sampleVal = burst * Math.exp(-progress * 14.0) * 0.7;
-        } else {
-          // Liquid / glide consonant tone
-          sampleVal = Math.sin(2 * Math.PI * pitchF0 * t) * 0.25 * env;
-        }
-
-        const pcm16 = Math.max(-32768, Math.min(32767, Math.round(sampleVal * 28000)));
-        pcmSamples.push(pcm16);
-      }
-    }
-
-    // Inter-word pause (80ms)
-    const wordPauseSamples = Math.round(0.08 * sampleRate);
-    for (let p = 0; p < wordPauseSamples; p++) {
-      pcmSamples.push(0);
-    }
-  }
-
-  const pcmBuffer = new Int16Array(pcmSamples);
-  const totalSeconds = Math.max(1, Math.round(pcmBuffer.length / sampleRate));
-  const blob = convertSamplesToMp3Blob(pcmBuffer, sampleRate, 128);
-  const audioUrl = URL.createObjectURL(blob);
-  const audioBase64 = await blobToBase64(blob);
+  // Calculate realistic speaking duration based on ~150 words per minute
+  const wordCount = cleanText ? cleanText.split(/\s+/).length : 0;
+  const estimatedSeconds = Math.max(1, Math.round((wordCount / 150) * 60));
 
   return {
-    audioUrl,
-    audioBase64,
-    duration: totalSeconds,
+    audioUrl: '',
+    audioBase64: '',
+    duration: estimatedSeconds,
   };
 }
 

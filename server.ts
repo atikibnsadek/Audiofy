@@ -166,7 +166,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Marcus (Warm Storyteller)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Orus',
+    geminiVoice: 'Puck',
     systemInstruction: 'You are Marcus, a warm, expressive, and conversational American male storyteller. Read the text with friendly natural warmth, melodic inflection, and engaging emotional connection.',
     sampleText: 'Welcome to this audiobook edition. Let us begin our journey together through chapter one.'
   },
@@ -184,7 +184,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Caleb (Vibrant & Energetic)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Enceladus',
+    geminiVoice: 'Fenrir',
     systemInstruction: 'You are Caleb, a youthful, crisp, and energetic American male tenor narrator. Read the text with brisk upbeat tempo, vibrant modern enthusiasm, and sharp articulation ideal for thrillers and fast adventure.',
     sampleText: 'Hey there! Fasten your seatbelt as we dive straight into chapter one of this thrilling adventure.'
   },
@@ -202,7 +202,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Ava (Smooth & Melodic)',
     accent: 'american',
     gender: 'female',
-    geminiVoice: 'Aoede',
+    geminiVoice: 'Zephyr',
     systemInstruction: 'You are Ava, a silky, smooth, and intimate American female narrator. Read the text with velvety melodic flow, gentle hypnotic cadence, and rich poetic atmosphere.',
     sampleText: 'Welcome to the audio edition. We invite you to sit back, relax, and enjoy the reading.'
   },
@@ -211,7 +211,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Emma (Bright & Expressive)',
     accent: 'american',
     gender: 'female',
-    geminiVoice: 'Leda',
+    geminiVoice: 'Kore',
     systemInstruction: 'You are Emma, a bright, cheerful, and articulate American female narrator. Read the text with sparkling clarity, lively upbeat cadence, and expressive youthful clarity.',
     sampleText: 'Welcome to this audiobook. Let these words unfold vividly as we begin our story.'
   },
@@ -238,7 +238,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Arthur (Classical Baritone)',
     accent: 'british',
     gender: 'male',
-    geminiVoice: 'Iapetus',
+    geminiVoice: 'Charon',
     systemInstruction: 'You are Arthur, a classical British Oxford gentleman baritone narrator. Read the text with stately Victorian elegance, dry dignified wit, formal British RP cadence, and rich theatrical depth.',
     sampleText: 'Good day and welcome to this audio edition. We shall now commence our journey.'
   },
@@ -265,7 +265,7 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
     name: 'Charlotte (Bright & Expressive)',
     accent: 'british',
     gender: 'female',
-    geminiVoice: 'Aoede',
+    geminiVoice: 'Zephyr',
     systemInstruction: 'You are Charlotte, a charming, theatrical, and vibrant British female storyteller. Read the text with expressive British inflection, bright whimsical color, and delightful fairytale storytelling flair.',
     sampleText: 'Welcome to this audio edition. I am delighted to guide you through each chapter.'
   },
@@ -273,32 +273,27 @@ export const NARRATOR_PROFILES: Record<string, NarratorProfile> = {
 
 const sampleAudioCache = new Map<string, { audioUrl: string; audioBase64: string; duration: number; voiceId: string; voiceName: string }>();
 
-const ALLOWED_GEMINI_VOICES = new Set([
-  'achernar', 'achird', 'algenib', 'algieba', 'alnilam', 'aoede', 'autonoe',
-  'callirrhoe', 'charon', 'despina', 'enceladus', 'erinome', 'fenrir',
-  'gacrux', 'iapetus', 'kore', 'laomedeia', 'leda', 'orus', 'puck',
-  'pulcherrima', 'rasalgethi', 'sadachbia', 'sadaltager', 'schedar',
-  'sulafat', 'umbriel', 'vindemiatrix', 'zephyr', 'zubenelgenubi'
-]);
+const ALLOWED_GEMINI_VOICES: Record<string, string> = {
+  puck: 'Puck',
+  charon: 'Charon',
+  kore: 'Kore',
+  fenrir: 'Fenrir',
+  zephyr: 'Zephyr',
+};
 
 function normalizeGeminiVoice(voiceName: string): string {
-  if (!voiceName) return 'puck';
+  if (!voiceName) return 'Puck';
   const lower = voiceName.toLowerCase().trim();
-  if (ALLOWED_GEMINI_VOICES.has(lower)) {
-    return lower;
+  if (ALLOWED_GEMINI_VOICES[lower]) {
+    return ALLOWED_GEMINI_VOICES[lower];
   }
   // Mappings for common names or previous aliases
-  if (lower.includes('orpheus') || lower.includes('marcus') || lower.includes('arthur')) return 'orus';
-  if (lower.includes('pegasus') || lower.includes('caleb')) return 'enceladus';
-  if (lower.includes('charon') || lower.includes('morgan') || lower.includes('jarvis')) return 'charon';
-  if (lower.includes('fenrir') || lower.includes('david') || lower.includes('mark')) return 'fenrir';
-  if (lower.includes('puck') || lower.includes('wyatt') || lower.includes('oliver')) return 'puck';
-  if (lower.includes('kore') || lower.includes('claire')) return 'kore';
-  if (lower.includes('aoede') || lower.includes('ava') || lower.includes('charlotte')) return 'aoede';
-  if (lower.includes('leda') || lower.includes('emma')) return 'leda';
-  if (lower.includes('zephyr') || lower.includes('eleanor')) return 'zephyr';
-  if (lower.includes('iapetus')) return 'iapetus';
-  return 'puck';
+  if (lower.includes('charon') || lower.includes('morgan') || lower.includes('jarvis') || lower.includes('arthur')) return 'Charon';
+  if (lower.includes('fenrir') || lower.includes('david') || lower.includes('mark') || lower.includes('caleb')) return 'Fenrir';
+  if (lower.includes('puck') || lower.includes('wyatt') || lower.includes('oliver') || lower.includes('marcus')) return 'Puck';
+  if (lower.includes('kore') || lower.includes('claire') || lower.includes('emma')) return 'Kore';
+  if (lower.includes('zephyr') || lower.includes('eleanor') || lower.includes('ava') || lower.includes('charlotte')) return 'Zephyr';
+  return 'Puck';
 }
 
 function extractPcmFromWav(wavBuffer: Buffer): { pcm: Buffer; sampleRate: number; numChannels: number; bitsPerSample: number } {

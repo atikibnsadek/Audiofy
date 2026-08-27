@@ -130,7 +130,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Marcus (Warm Storyteller)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Orus',
+    geminiVoice: 'Puck',
     description: 'Natural, resonant, and expressive American male narration with authentic human cadence.',
     sampleText: 'Welcome to this audiobook edition. Let us begin our journey together through chapter one.'
   },
@@ -166,7 +166,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Caleb (Vibrant & Energetic)',
     accent: 'american',
     gender: 'male',
-    geminiVoice: 'Enceladus',
+    geminiVoice: 'Fenrir',
     description: 'Energetic, crisp, and youthful American male voice ideal for fast-paced adventures and modern thrillers.',
     sampleText: 'Hey there! Fasten your seatbelt as we dive straight into chapter one of this thrilling adventure.'
   },
@@ -184,7 +184,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Ava (Smooth & Melodic)',
     accent: 'american',
     gender: 'female',
-    geminiVoice: 'Aoede',
+    geminiVoice: 'Zephyr',
     description: 'Sophisticated, expressive, and natural American female narrator with fluid rhythm.',
     sampleText: 'Welcome to the audio edition. We invite you to sit back, relax, and enjoy the reading.'
   },
@@ -193,7 +193,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Emma (Bright & Expressive)',
     accent: 'american',
     gender: 'female',
-    geminiVoice: 'Leda',
+    geminiVoice: 'Kore',
     description: 'Bright, articulate, and youthful American female narration with crystal clarity.',
     sampleText: 'Welcome to this audiobook. Let these words unfold vividly as we begin our story.'
   },
@@ -229,7 +229,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Arthur (Classical Baritone)',
     accent: 'british',
     gender: 'male',
-    geminiVoice: 'Iapetus',
+    geminiVoice: 'Charon',
     description: 'Distinguished British male baritone with classic theatrical cadence and deep resonance.',
     sampleText: 'Good day and welcome to this audio edition. We shall now commence our journey.'
   },
@@ -247,7 +247,7 @@ export const VOICE_OPTIONS: import('../types').VoiceOption[] = [
     name: 'Charlotte (Bright & Expressive)',
     accent: 'british',
     gender: 'female',
-    geminiVoice: 'Aoede',
+    geminiVoice: 'Zephyr',
     description: 'Bright, articulate, and elegant British female voice with sparkling clarity.',
     sampleText: 'Welcome to this audio edition. I am delighted to guide you through each chapter.'
   }

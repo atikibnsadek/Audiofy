@@ -291,32 +291,8 @@ export default function App() {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.audioUrl) {
+        if (data.audioUrl && !data.isClientFallback) {
           audioUrl = data.audioUrl;
-          audioBase64 = data.audioBase64 || '';
-          audioMimeType = data.audioMimeType || 'audio/wav';
-          audioFileExtension = data.audioFileExtension || 'wav';
-          duration = data.duration || targetChapter.estimatedMinutes * 60;
-          voiceUsed = data.voiceUsed || activeVoice.name;
-          isClientFallback = !!data.isClientFallback;
-          isDownloadable = true;
-        } else if (data.isClientFallback) {
-          const fallbackAudio = await generateClientSpeechAudio(
-            targetChapter.text,
-            accent,
-            gender,
-            controller.signal
-          );
-          audioUrl = fallbackAudio.audioUrl;
-          audioBase64 = fallbackAudio.audioBase64;
-          audioMimeType = 'audio/mp3';
-          audioFileExtension = 'mp3';
-          duration = data.duration || fallbackAudio.duration;
-          voiceUsed = data.voiceUsed || activeVoice.name;
-          isClientFallback = true;
-          isDownloadable = true;
-        } else {
-          audioUrl = data.audioUrl || '';
           audioBase64 = data.audioBase64 || '';
           audioMimeType = data.audioMimeType || 'audio/wav';
           audioFileExtension = data.audioFileExtension || 'wav';
@@ -324,23 +300,22 @@ export default function App() {
           voiceUsed = data.voiceUsed || activeVoice.name;
           isClientFallback = false;
           isDownloadable = true;
+        } else {
+          audioUrl = '';
+          audioBase64 = '';
+          duration = data.duration || targetChapter.estimatedMinutes * 60;
+          voiceUsed = data.voiceUsed || activeVoice.name;
+          isClientFallback = true;
+          isDownloadable = false;
         }
       } else {
-        // If server hits quota limits or is unavailable, use client speech synthesizer fallback
-        console.warn('Server TTS returned non-200. Using client-side speech synthesizer fallback.');
-        const fallbackAudio = await generateClientSpeechAudio(
-          targetChapter.text,
-          accent,
-          gender,
-          controller.signal
-        );
-        audioUrl = fallbackAudio.audioUrl;
-        audioBase64 = fallbackAudio.audioBase64;
-        audioMimeType = 'audio/mp3';
-        audioFileExtension = 'mp3';
-        duration = fallbackAudio.duration;
+        console.warn('Server TTS returned non-200. Using client-side live speech synthesizer.');
+        audioUrl = '';
+        audioBase64 = '';
+        duration = targetChapter.estimatedMinutes * 60;
+        voiceUsed = activeVoice.name;
         isClientFallback = true;
-        isDownloadable = true;
+        isDownloadable = false;
       }
 
       setChapters((prev) =>
@@ -401,77 +376,31 @@ export default function App() {
         return false;
       }
 
-      console.warn('Attempting client-side speech synthesizer fallback after error:', err);
-      try {
-        const fallbackAudio = await generateClientSpeechAudio(
-          targetChapter.text,
-          accent,
-          gender,
-          controller.signal
-        );
-        setChapters((prev) =>
-          prev.map((c) =>
-            c.id === chapterId
-              ? {
-                  ...c,
-                  status: 'ready',
-                  audioUrl: fallbackAudio.audioUrl,
-                audioBase64: fallbackAudio.audioBase64,
-                audioMimeType: 'audio/mpeg',
-                audioFileExtension: 'mp3',
-                audioDuration: fallbackAudio.duration,
+      console.warn('Falling back to client-side speech synthesizer after generation error:', err);
+      const estDuration = targetChapter.estimatedMinutes * 60 || 60;
+      setChapters((prev) =>
+        prev.map((c) =>
+          c.id === chapterId
+            ? {
+                ...c,
+                status: 'ready',
+                audioUrl: '',
+                audioBase64: '',
+                audioDuration: estDuration,
                 isClientFallback: true,
-                isDownloadable: true,
-                  accentUsed: accent,
-                  genderUsed: gender,
-                }
-              : c
-          )
-        );
+                isDownloadable: false,
+                accentUsed: accent,
+                genderUsed: gender,
+                voiceUsed: activeVoice.name,
+              }
+            : c
+        )
+      );
 
-        // Also add fallback audio to Downloads Library
-        const newFallbackItem: GeneratedAudioFile = {
-          id: `audio-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-          chapterId: targetChapter.id,
-          chapterNumber: targetChapter.chapterNumber,
-          chapterTitle: targetChapter.title,
-          bookTitle: bookTitle || 'Audiobook',
-          accent,
-          gender,
-          voiceName: activeVoice.name,
-          audioUrl: fallbackAudio.audioUrl,
-          audioBase64: fallbackAudio.audioBase64,
-          audioMimeType: 'audio/mp3',
-          audioFileExtension: 'mp3',
-          audioDuration: fallbackAudio.duration,
-          createdAt: Date.now(),
-          isClientFallback: true,
-          isDownloadable: true,
-        };
-        setStoredAudioFiles((prev) => [newFallbackItem, ...prev]);
-
-        if (!currentPlayingChapterId) {
-          setCurrentPlayingChapterId(chapterId);
-        }
-        return true;
-      } catch (fallbackErr: any) {
-        if (fallbackErr.name === 'AbortError' || controller.signal.aborted) {
-          setChapters((prev) =>
-            prev.map((c) => (c.id === chapterId ? { ...c, status: 'idle', errorMessage: undefined } : c))
-          );
-          return false;
-        }
-
-        console.error('Audio generation failed for chapter:', chapterId, fallbackErr);
-        setChapters((prev) =>
-          prev.map((c) =>
-            c.id === chapterId
-              ? { ...c, status: 'error', errorMessage: fallbackErr.message || 'Generation failed' }
-              : c
-          )
-        );
-        return false;
+      if (!currentPlayingChapterId) {
+        setCurrentPlayingChapterId(chapterId);
       }
+      return true;
     } finally {
       delete activeControllersRef.current[chapterId];
     }
@@ -532,11 +461,27 @@ export default function App() {
     stopLiveBrowserSpeech();
     setCustomPlayingTrack(null);
 
-    if (chapter.audioUrl) {
+    const effectiveUrl =
+      chapter.audioUrl ||
+      (chapter.audioBase64
+        ? `data:${chapter.audioMimeType || 'audio/wav'};base64,${chapter.audioBase64}`
+        : '');
+
+    if (currentPlayingChapterId === chapter.id) {
+      setIsPlaying((prev) => !prev);
+      return;
+    }
+
+    if (chapter.status === 'ready' || effectiveUrl) {
+      if (effectiveUrl && chapter.audioUrl !== effectiveUrl) {
+        setChapters((prev) =>
+          prev.map((c) => (c.id === chapter.id ? { ...c, audioUrl: effectiveUrl } : c))
+        );
+      }
       setCurrentPlayingChapterId(chapter.id);
       setIsPlaying(true);
     } else {
-      // If not generated, trigger generation and queue
+      // If not yet generated, trigger generation and auto-play
       handleGenerateSingleChapter(chapter.id);
     }
   };
@@ -553,7 +498,7 @@ export default function App() {
     const currentIndex = chapters.findIndex((c) => c.id === currentPlayingChapterId);
     if (currentIndex > 0) {
       const prevChapter = chapters[currentIndex - 1];
-      if (prevChapter.audioUrl) {
+      if (prevChapter.status === 'ready' || prevChapter.audioUrl || prevChapter.audioBase64) {
         setCustomPlayingTrack(null);
         setCurrentPlayingChapterId(prevChapter.id);
         setIsPlaying(true);
@@ -567,7 +512,7 @@ export default function App() {
     const currentIndex = chapters.findIndex((c) => c.id === currentPlayingChapterId);
     if (currentIndex >= 0 && currentIndex < chapters.length - 1) {
       const nextChapter = chapters[currentIndex + 1];
-      if (nextChapter.audioUrl) {
+      if (nextChapter.status === 'ready' || nextChapter.audioUrl || nextChapter.audioBase64) {
         setCustomPlayingTrack(null);
         setCurrentPlayingChapterId(nextChapter.id);
         setIsPlaying(true);
@@ -753,13 +698,25 @@ export default function App() {
     chapters.find((c) => c.id === currentPlayingChapterId) ||
     (customPlayingTrack && customPlayingTrack.id === currentPlayingChapterId ? customPlayingTrack : null);
   const currentChapterIndex = chapters.findIndex((c) => c.id === currentPlayingChapterId);
-  const hasPrev = currentChapterIndex > 0 && Boolean(chapters[currentChapterIndex - 1]?.audioUrl);
+  const hasPrev =
+    currentChapterIndex > 0 &&
+    Boolean(
+      chapters[currentChapterIndex - 1]?.status === 'ready' ||
+      chapters[currentChapterIndex - 1]?.audioUrl ||
+      chapters[currentChapterIndex - 1]?.audioBase64
+    );
   const hasNext =
     currentChapterIndex >= 0 &&
     currentChapterIndex < chapters.length - 1 &&
-    Boolean(chapters[currentChapterIndex + 1]?.audioUrl);
+    Boolean(
+      chapters[currentChapterIndex + 1]?.status === 'ready' ||
+      chapters[currentChapterIndex + 1]?.audioUrl ||
+      chapters[currentChapterIndex + 1]?.audioBase64
+    );
 
-  const readyAudioCount = chapters.filter((c) => c.status === 'ready' || Boolean(c.audioUrl)).length;
+  const readyAudioCount = chapters.filter(
+    (c) => c.status === 'ready' || Boolean(c.audioUrl) || Boolean(c.audioBase64)
+  ).length;
 
   return (
     <div

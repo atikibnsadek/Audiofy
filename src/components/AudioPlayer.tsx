@@ -86,14 +86,28 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         Math.max(5, Math.round(((currentChapter.wordCount || 100) / 140) * 60));
       setDuration(estDuration);
 
-      if (audioRef.current && currentChapter.audioUrl) {
-        audioRef.current.src = currentChapter.audioUrl;
+      const effectiveAudioSrc =
+        currentChapter.audioUrl ||
+        (currentChapter.audioBase64
+          ? `data:${currentChapter.audioMimeType || 'audio/wav'};base64,${currentChapter.audioBase64}`
+          : '');
+
+      if (audioRef.current && effectiveAudioSrc && !currentChapter.isClientFallback) {
+        audioRef.current.src = effectiveAudioSrc;
         audioRef.current.playbackRate = playbackRate;
         audioRef.current.volume = isMuted ? 0 : volume;
         audioRef.current.load();
+      } else if (audioRef.current) {
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
       }
     }
-  }, [currentChapter?.id, currentChapter?.audioUrl]);
+  }, [
+    currentChapter?.id,
+    currentChapter?.audioUrl,
+    currentChapter?.audioBase64,
+    currentChapter?.isClientFallback,
+  ]);
 
   // Sync play/pause state & audio playback
   useEffect(() => {
@@ -105,15 +119,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       return;
     }
 
+    const effectiveAudioSrc =
+      currentChapter.audioUrl ||
+      (currentChapter.audioBase64
+        ? `data:${currentChapter.audioMimeType || 'audio/wav'};base64,${currentChapter.audioBase64}`
+        : '');
+
     const effectiveAccent = currentChapter.accentUsed || accent;
     const effectiveGender = currentChapter.genderUsed || gender;
 
     if (isPlaying) {
       stopLiveBrowserSpeech();
-      if (audioRef.current && currentChapter.audioUrl) {
-        audioRef.current.play().catch((err) => console.warn('Play error:', err));
-      } else if (!currentChapter.audioUrl) {
-        // Fallback to live speech synthesis only if no generated audio file exists
+      if (audioRef.current && effectiveAudioSrc && !currentChapter.isClientFallback) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => console.warn('Audio playback error:', err));
+        }
+      } else {
+        // High-quality live browser speech synthesis
         playLiveBrowserSpeech(
           currentChapter.text,
           effectiveAccent,
@@ -129,17 +152,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audioRef.current.pause();
       }
     }
-
-    return () => {
-      stopLiveBrowserSpeech();
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
   }, [
     isPlaying,
     currentChapter?.id,
     currentChapter?.audioUrl,
+    currentChapter?.audioBase64,
     currentChapter?.isClientFallback,
     currentChapter?.accentUsed,
     currentChapter?.genderUsed,
@@ -201,7 +218,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current && currentChapter?.audioUrl) {
+    if (audioRef.current) {
       setDuration(audioRef.current.duration || currentChapter?.audioDuration || 0);
     }
   };
@@ -209,9 +226,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
     setCurrentTime(newTime);
-    if (audioRef.current && currentChapter?.audioUrl) {
+    const hasAudio = Boolean(currentChapter?.audioUrl || currentChapter?.audioBase64);
+    if (audioRef.current && hasAudio && !currentChapter?.isClientFallback) {
       audioRef.current.currentTime = newTime;
-    } else if (!currentChapter?.audioUrl && isPlaying) {
+    } else if (isPlaying) {
       const effectiveDuration = duration || currentChapter?.audioDuration || 60;
       const ratio = newTime / effectiveDuration;
       const effectiveAccent = currentChapter?.accentUsed || accent;
@@ -232,9 +250,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const effectiveDuration = duration || currentChapter?.audioDuration || 60;
     const newTime = Math.max(0, Math.min(currentTime + seconds, effectiveDuration));
     setCurrentTime(newTime);
-    if (audioRef.current && currentChapter?.audioUrl) {
+    const hasAudio = Boolean(currentChapter?.audioUrl || currentChapter?.audioBase64);
+    if (audioRef.current && hasAudio && !currentChapter?.isClientFallback) {
       audioRef.current.currentTime = newTime;
-    } else if (!currentChapter?.audioUrl && isPlaying) {
+    } else if (isPlaying) {
       const ratio = newTime / effectiveDuration;
       const effectiveAccent = currentChapter?.accentUsed || accent;
       const effectiveGender = currentChapter?.genderUsed || gender;
@@ -288,7 +307,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!currentChapter || !currentChapter.audioUrl) {
+  if (!currentChapter) {
     return null;
   }
 
